@@ -555,7 +555,7 @@ const MG={
   corde:{n:'Tir à la corde',i:'🪢',d:'Face à face : tapotez votre zone pour tirer la corde de votre côté.',duelOnly:true},
   chrono:{n:'Le chrono aveugle',i:'⏱️',d:'Buzzez quand vous pensez que 10 secondes se sont écoulées, sans voir le chrono.'},
   quiest:{n:'Qui est-ce ? de la crew',i:'🕵️',d:'Une photo floutée devient nette : le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3},
-  mime:{n:'Le mime',i:'🎭',d:'Chacun son tour, mimez l\'artiste affiché sans parler. Chaque bonne réponse rapporte des canards au mimeur et à celui qui trouve.'},
+  mime:{n:'Le mime',i:'🎭',d:'Chacun son tour, choisissez un artiste et mimez-le sans parler. Chaque bonne réponse rapporte des canards au mimeur et à celui qui trouve.'},
   defi:{n:'Défi IRL',i:'🎤',d:'Un défi dans la vraie vie. Vous désignez vous-mêmes le gagnant.'},
 };
 const QUIZ=[
@@ -1607,17 +1607,13 @@ async function mgMemory(players){
   });
   mgClose();return sc;
 }
-const MIMES=['Stromae','Indochine','-M-','Shaka Ponk','Angèle','Orelsan','Muse','Sting','Lenny Kravitz','The Cure','David Guetta','Zaz','Bigflo & Oli','Vianney','Pharrell Williams','Louane','Gims','Patrick Bruel','Christine and the Queens','Iggy Pop','Rammstein','Bob Dylan','Johnny Hallyday','Michael Jackson','Freddie Mercury','Elvis Presley','Madonna','Lady Gaga','Daft Punk','Calogero','Julien Doré','Juliette Armanet','Clara Luciani','PNL','Booba','Jul','Soprano','Kendji Girac','Céline Dion','ACDC','Kiss','Les Vieilles Canailles','Mika','Ed Sheeran','Coldplay','Rihanna','Bob Marley','Manu Chao','Renaud','Francis Cabrel'];
-let mimeDeck=[];
 async function mgMime(players,{duel}={}){
   const stage=mgOpen('Le mime','🎭',true);
   const pay=!duel&&S&&!S.free,DUCKS=2,ROUNDS_M=duel?2:2,SECS=30;
   const sc=zero(players);sc._direct=pay;
-  await ready(stage,`${ROUNDS_M} tours · ${SECS} secondes par mime`,`Chacun son tour, le mimeur regarde seul l'écran et mime l'artiste sans parler.${pay?` Bonne réponse : +${DUCKS} ${DUCK} pour le mimeur et +${DUCKS} ${DUCK} pour celui qui trouve.`:''}`);
+  await ready(stage,`${ROUNDS_M} tours · ${SECS} secondes par mime`,`Chacun son tour, le mimeur choisit dans sa tête un artiste et le mime sans parler.${pay?` Bonne réponse : +${DUCKS} ${DUCK} pour le mimeur et +${DUCKS} ${DUCK} pour celui qui trouve.`:''}`);
   for(let r=0;r<ROUNDS_M;r++)for(const m of players){
-    if(!mimeDeck.length)mimeDeck=shuffle(MIMES);const word=mimeDeck.pop();
-    await new Promise(go=>{stage.innerHTML=`<div class="turnchip" style="--pc:${m.color}">${avatarHTML(m,36)} ${esc(m.nick)} mime</div><div class="q">Les autres, ne regardez pas l'écran !</div><button class="btn primary" id="see">👀 Je suis ${esc(m.nick)}, montrer l'artiste</button>`;$('#see').onclick=go});
-    await new Promise(go=>{stage.innerHTML=`<div class="turnchip" style="--pc:${m.color}">${avatarHTML(m,36)} ${esc(m.nick)}</div><div class="qnum">Tu dois mimer</div><div class="defi" style="font-size:clamp(34px,6vw,64px)">${esc(word)}</div><button class="btn primary" id="go">C'est mémorisé, lancer le chrono</button>`;$('#go').onclick=go});
+    await new Promise(go=>{stage.innerHTML=`<div class="turnchip" style="--pc:${m.color}">${avatarHTML(m,36)} ${esc(m.nick)} mime</div><div class="q">${esc(m.nick)}, choisis un artiste dans ta tête sans le dire.</div><div class="hint">Un chanteur, un groupe, un DJ… à toi de voir !</div><button class="btn primary" id="go">🎭 J'ai mon artiste, lancer le chrono</button>`;$('#go').onclick=go});
     const others=players.filter(p=>p!==m);let done=false;
     const res=await new Promise(fin=>{
       stage.innerHTML=`<div class="turnchip" style="--pc:${m.color}">${avatarHTML(m,36)} ${esc(m.nick)} mime…</div><div class="timer" id="tmr" style="font-size:56px">${SECS} s</div><div class="q">Qui a trouvé ?</div><div class="pickrow">${others.map(p=>`<button class="pick" data-id="${p.id}" style="--pc:${p.color}">${avatarHTML(p,40)} ${esc(p.nick)}</button>`).join('')}<button class="pick" data-id="" style="--pc:#666">❌ Personne</button></div>`;
@@ -1626,8 +1622,8 @@ async function mgMime(players,{duel}={}){
     });
     if(res){const f=players.find(p=>p.id===res);sc[m.id]++;sc[f.id]++;SFX.coin();
       if(pay){m.ducks+=DUCKS;f.ducks+=DUCKS;renderHUD()}
-      await new Promise(go=>{stage.innerHTML=`<div class="q">✅ ${esc(f.nick)} a trouvé « ${esc(word)} » !</div>${pay?`<div class="hint">+${DUCKS} ${DUCK} pour ${esc(m.nick)} et +${DUCKS} ${DUCK} pour ${esc(f.nick)}</div>`:''}<button class="btn primary" id="nx">Mime suivant</button>`;$('#nx').onclick=go})}
-    else await new Promise(go=>{stage.innerHTML=`<div class="q">❌ Personne n'a trouvé. C'était « ${esc(word)} ».</div><button class="btn primary" id="nx">Mime suivant</button>`;$('#nx').onclick=go});
+      await new Promise(go=>{stage.innerHTML=`<div class="q">✅ ${esc(f.nick)} a trouvé !</div>${pay?`<div class="hint">+${DUCKS} ${DUCK} pour ${esc(m.nick)} et +${DUCKS} ${DUCK} pour ${esc(f.nick)}</div>`:''}<button class="btn primary" id="nx">Mime suivant</button>`;$('#nx').onclick=go})}
+    else await new Promise(go=>{stage.innerHTML=`<div class="q">❌ Personne n'a trouvé. ${esc(m.nick)}, tu peux dire qui c'était !</div><button class="btn primary" id="nx">Mime suivant</button>`;$('#nx').onclick=go});
   }
   mgClose();return sc;
 }
