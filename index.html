@@ -347,6 +347,7 @@ body.mgopen{background:#0b1020}
 @keyframes brar{50%{transform:translateX(9px)}}
 .vinyl{width:150px;height:150px;border-radius:50%;margin:8px auto;display:grid;place-items:center;font-size:44px;background:radial-gradient(circle,#ffd23f 0 18%,#111 19% 22%,#222 23% 30%,#111 31% 38%,#262626 39% 46%,#111 47%);box-shadow:0 0 30px rgba(255,210,63,.35)}
 .vinyl.spin{animation:spin 1.8s linear infinite}
+.bcd{font-size:80px;width:96px;text-align:center}
 .bres{display:flex;align-items:center;gap:14px;justify-content:center;font-size:22px;margin:8px 0}.bres img{width:96px;height:96px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.5)}.bres b{font-family:var(--display);font-weight:400;color:var(--duck);font-size:26px}
 .fsec{width:min(1000px,100%);margin:6px 0 -4px;font-family:var(--display);font-weight:400;color:var(--duck);text-align:left}
 .fcardg.irl{border-color:#b04ad6;background:linear-gradient(160deg,#2a1a48,var(--panel))}
@@ -570,7 +571,7 @@ const MG={
   chrono:{n:'Le chrono aveugle',i:'⏱️',d:'Buzzez quand vous pensez que 10 secondes se sont écoulées, sans voir le chrono.'},
   quiest:{n:'Qui est-ce ? du crew',i:'🕵️',d:'Duel Benoît XVI contre Panoramix (Bizu connaît les réponses) : une photo floutée devient nette, le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3,duelOnly:true,pair:['benoit','jeje']},
   agent:{n:'La Taupe',i:'🕶️',need:()=>!S||S.players.length>=3,d:'Deux agents ont le même mot secret, la taupe ne le connaît pas. Chacun donne un indice, puis vous votez pour démasquer la taupe.'},
-  blind:{n:'Blind test',i:'🎧',d:'6 extraits de chansons. Buzzez dès que vous reconnaissez, puis donnez l\'artiste et le titre à voix haute.',need:()=>navigator.onLine!==false},
+  blind:{n:'Blind test',i:'🎧',d:'6 extraits d\'artistes passés au Paléo : 3 tubes et 3 morceaux moins connus. Buzzez dès que vous reconnaissez, puis donnez l\'artiste et le titre à voix haute.',need:()=>navigator.onLine!==false},
   mime:{n:'Le mime',i:'🎭',d:'Chacun son tour, choisissez un artiste et mimez-le sans parler. Chaque bonne réponse rapporte des canards au mimeur et à celui qui trouve.'},
   defi:{n:'Défi IRL',i:'🎤',d:'Un défi dans la vraie vie. Vous désignez vous-mêmes le gagnant.'},
 };
@@ -1478,8 +1479,11 @@ function ready(stage,title,text){
   return new Promise(r=>$('#ready').onclick=()=>{tone(880,.12,'square',.06);r()});
 }
 
-const BLIND=[['Stromae','Alors on danse'],['Indochine','L\'aventurier'],['-M-','Je dis aime'],['Shaka Ponk','My Name Is Stain'],['Angèle','Balance ton quoi'],['Orelsan','La terre est ronde'],['Muse','Uprising'],['The Police','Roxanne'],['Lenny Kravitz','Fly Away'],['The Cure','Friday I\'m in Love'],['David Guetta','Titanium'],['Zaz','Je veux'],['Bigflo & Oli','Dommage'],['Vianney','Je m\'en vais'],['Pharrell Williams','Happy'],['Louane','Jour 1'],['Gims','Sapés comme jamais'],['Christine and the Queens','Christine'],['Iggy Pop','The Passenger'],['Rammstein','Du hast'],['Daft Punk','Get Lucky'],['Julien Doré','Coco Câline'],['Clara Luciani','La grenade'],['Mika','Relax, Take It Easy'],['Ed Sheeran','Shape of You'],['Coldplay','Viva la Vida'],['Bob Marley','Could You Be Loved'],['Manu Chao','Me gustas tu'],['Renaud','Mistral gagnant'],['Francis Cabrel','Je l\'aime à mourir'],['Téléphone','Un autre monde'],['Noir Désir','Le vent nous portera'],['Kungs','This Girl'],['Calogero','En apesanteur'],['Nirvana','Smells Like Teen Spirit'],['Queen','We Will Rock You'],['Imagine Dragons','Believer'],['Arctic Monkeys','Do I Wanna Know?'],['Gorillaz','Feel Good Inc.'],['Placebo','Every You Every Me'],['Patrick Bruel','Place des grands hommes'],['Les Négresses Vertes','Voilà l\'été'],['Louise Attaque','J\'t\'emmène au vent'],['Matmatah','Lambé an dro'],['Tryo','L\'hymne de nos campagnes'],['IAM','Je danse le mia'],['Gotye','Somebody That I Used to Know'],['Major Lazer','Lean On'],['Oasis','Wonderwall'],['The White Stripes','Seven Nation Army']];
-let blindDeck=[];
+// Artistes passés au Paléo (2022 à 2026) : des tubes, et des morceaux moins connus
+const BLIND_HIT=[['The Cure','Boys Don\'t Cry'],['Gorillaz','Feel Good Inc.'],['Lorde','Royals'],['Katy Perry','Roar'],['Justice','D.A.N.C.E.'],['Simple Minds','Don\'t You (Forget About Me)'],['Texas','Say What You Want'],['Sex Pistols','Anarchy in the U.K.'],['Queens of the Stone Age','No One Knows'],['David Guetta','Titanium'],['Will Smith','Men in Black'],['Sean Paul','Get Busy'],['CHIC','Le Freak'],['Patti Smith','Because the Night'],['Sam Smith','Stay With Me'],['Mika','Relax, Take It Easy'],['Calogero','En apesanteur'],['Christophe Maé','Il est où le bonheur'],['Major Lazer','Lean On'],['Gims','Sapés comme jamais'],['IAM','Je danse le mia'],['Stromae','Alors on danse'],['Kiss','I Was Made for Lovin\' You'],['Sting','Englishman in New York'],['Rag\'n\'Bone Man','Human'],['DJ Snake','Turn Down for What'],['Angèle','Balance ton quoi'],['Tryo','L\'hymne de nos campagnes'],['Francis Cabrel','Je l\'aime à mourir'],['Orelsan','La terre est ronde'],['Véronique Sanson','Amoureuse'],['Zaho de Sagazan','La symphonie des éclairs'],['Hoshi','Ta marinière'],['Maxime Le Forestier','San Francisco'],['Juliette Armanet','Le dernier jour du disco'],['Burna Boy','Last Last'],['Skunk Anansie','Hedonism (Just Because You Feel Good)'],['Royal Blood','Figure It Out']];
+const BLIND_RARE=[['The Cure','A Forest'],['Gorillaz','On Melancholy Hill'],['Lorde','Ribs'],['Justice','Genesis'],['Simple Minds','Alive and Kicking'],['Skunk Anansie','Weak'],['Texas','Black Eyed Boy'],['Queens of the Stone Age','Make It Wit Chu'],['Sean Paul','We Be Burnin\''],['Patti Smith','Gloria'],['Paul Kalkbrenner','Sky and Sand'],['Aurora','Runaway'],['The Blaze','Territory'],['Khruangbin','Maria También'],['Royal Blood','Little Monster'],['Eddy de Pretto','Kid'],['Olivia Ruiz','J\'traîne des pieds'],['Goran Bregović','Kalashnikov'],['Luidji','Pour deux âmes solitaires'],['Gaël Faye','Petit pays'],['Feu! Chatterton','La Malinche'],['Roméo Elvis','Malade'],['Zaho de Sagazan','Aspiration'],['Juliette Armanet','L\'amour en solitaire'],['Sting','Shape of My Heart'],['Mika','Lollipop'],['Calogero','Un jour au mauvais endroit'],['Christophe Maé','Belle demoiselle'],['IAM','Petit frère'],['Stromae','Ta fête'],['Angèle','La loi de Murphy'],['Tryo','Serre-moi'],['Grand Corps Malade','Saint-Denis'],['Ásgeir','King and Cross'],['Major Lazer','Watch Out for This (Bumaye)'],['Burna Boy','Ye'],['Rag\'n\'Bone Man','Skin'],['The Young Gods','Skinflowers'],['Buraka Som Sistema','Kalemba (Wegue Wegue)']];
+const BLIND=[...BLIND_HIT,...BLIND_RARE];
+let blindDeck={hit:[],rare:[]};
 function dzSearch(q){return new Promise(res=>{const cb='dz'+Math.random().toString(36).slice(2);const sc=document.createElement('script');let t;
   const clean=()=>{clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}sc.remove()};
   t=setTimeout(()=>{clean();res(null)},8000);window[cb]=d=>{clean();res(d)};sc.onerror=()=>{clean();res(null)};
@@ -1489,15 +1493,17 @@ async function dzTrack([a,t]){
   const d=await dzSearch(`artist:"${a}" track:"${t}"`)||{};let r=(d.data||[]).filter(x=>x.preview);
   if(!r.length){const d2=await dzSearch(`${a} ${t}`)||{};r=(d2.data||[]).filter(x=>x.preview)}
   const best=r.find(x=>norm(x.artist.name).includes(norm(a).slice(0,5)))||r[0];
-  return best?{a,t,url:best.preview,cover:best.album&&best.album.cover_medium}:null;
+  return best?{a,t,url:best.preview,cover:(best.album&&(best.album.cover_big||best.album.cover_medium||best.album.cover))||(best.artist&&best.artist.picture_big)||''}:null;
 }
 async function mgBlind(players,{duel}={}){
   const n=duel?4:6;
   const stage=mgOpen('Blind test','🎧');
   const sc=zero(players);let handler=null;
   stage.innerHTML=`<div class="q">🎧 Préparation des morceaux…</div><div class="hint">Connexion à Deezer</div>`;
-  const tracks=[];let tries=0;
-  while(tracks.length<n&&tries<n*3){tries++;if(!blindDeck.length)blindDeck=shuffle(BLIND);const tk=await dzTrack(blindDeck.pop());if(tk)tracks.push(tk)}
+  const tracks=[];
+  for(const [tier,pool] of [['hit',BLIND_HIT],['rare',BLIND_RARE]]){let got=0,tries=0;
+    while(got<n/2&&tries<n*3){tries++;if(!blindDeck[tier].length)blindDeck[tier]=shuffle(pool);const tk=await dzTrack(blindDeck[tier].pop());if(tk){tk.tier=tier;tracks.push(tk);got++}}}
+  shuffle(tracks);for(let k=tracks.length-1;k>0;k--){const m=Math.floor(Math.random()*(k+1));[tracks[k],tracks[m]]=[tracks[m],tracks[k]]}
   if(!tracks.length){stage.innerHTML=`<div class="q">😕 Impossible de joindre Deezer</div><div class="hint">Vérifie la connexion internet de la tablette. Le blind test est annulé pour ce tour.</div><button class="btn primary" id="nx">Continuer</button>`;await new Promise(r=>$('#nx').onclick=r);mgClose();return sc}
   const bz=makeBuzzers(players,p=>handler&&handler(p),players.length===2);
   players.forEach(p=>bz.set(p.id,'0 pt'));
@@ -1506,16 +1512,16 @@ async function mgBlind(players,{duel}={}){
   for(let i=0;i<tracks.length;i++){const tk=tracks[i];
     await new Promise(done=>{
       let responder=null,over=false;const locked=new Set();
-      const fakes=shuffle(BLIND.filter(x=>x[1]!==tk.t)).slice(0,3).map(x=>({a:x[0],t:x[1],ok:false}));
+      const fakes=shuffle((tk.tier==='rare'?BLIND_RARE:BLIND_HIT).filter(x=>x[1]!==tk.t&&x[0]!==tk.a)).slice(0,3).map(x=>({a:x[0],t:x[1],ok:false}));
       const opts=shuffle([{a:tk.a,t:tk.t,ok:true},...fakes]);const ko=new Set();
       au.src=tk.url;au.currentTime=0;au.volume=1;au.muted=false;
-      stage.innerHTML=`<div class="qnum">Morceau ${i+1} / ${tracks.length}</div><div class="vinyl" id="vin"><span>🎵</span></div><div class="timer" id="tmr">30 s</div><div class="hint" id="hint">Buzzez dès que vous reconnaissez !</div><div id="judge"></div><button class="btn ghost" id="skip">Personne ne trouve</button>`;
+      stage.innerHTML=`<div class="qnum">Morceau ${i+1} / ${tracks.length} · ${tk.tier==='rare'?'🔥 Moins connu':'⭐ Tube'}</div><div class="vinyl" id="vin"><span>🎵</span></div><div class="timer" id="tmr">30 s</div><div class="hint" id="hint">Buzzez dès que vous reconnaissez !</div><div id="judge"></div><button class="btn ghost" id="skip">Personne ne trouve</button>`;
       const hint=$('#hint'),judge=$('#judge'),vin=$('#vin');
       au.play().catch(()=>{hint.innerHTML='Touche ▶ pour lancer la musique';const b=document.createElement('button');b.className='btn primary';b.textContent='▶ Lancer';b.onclick=()=>{au.play();b.remove()};judge.appendChild(b)});
       const tick=setInterval(()=>{const t=$('#tmr');if(t&&!au.paused)t.textContent=Math.max(0,Math.ceil(30-au.currentTime))+' s'},250);
       const reveal=async(msg)=>{if(over)return;over=true;handler=null;clearInterval(tick);vin.classList.remove('spin');
         const sk=$('#skip');if(sk)sk.remove();au.play().catch(()=>{});
-        judge.innerHTML=`<div class="bres">${tk.cover?`<img src="${tk.cover}" alt="">`:''}<div><b>${esc(tk.t)}</b><br>${esc(tk.a)}</div></div>`;hint.innerHTML=msg;
+        judge.innerHTML=`<div class="bres">${tk.cover?`<img src="${tk.cover}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'bcd',textContent:'💿'}))">`:'<span class="bcd">💿</span>'}<div><b>${esc(tk.t)}</b><br>${esc(tk.a)}</div></div>`;hint.innerHTML=msg;
         const nb=document.createElement('button');nb.className='btn primary';nb.textContent=i<tracks.length-1?'Morceau suivant ➜':'Voir les résultats';stage.appendChild(nb);
         await new Promise(r=>nb.onclick=r);au.pause();bz.clear();done()};
       au.onplay=()=>vin.classList.add('spin');au.onpause=()=>vin.classList.remove('spin');
