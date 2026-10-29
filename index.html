@@ -560,6 +560,7 @@ const MG={
   corde:{n:'Tir à la corde',i:'🪢',d:'Face à face : tapotez votre zone pour tirer la corde de votre côté.',duelOnly:true},
   chrono:{n:'Le chrono aveugle',i:'⏱️',d:'Buzzez quand vous pensez que 10 secondes se sont écoulées, sans voir le chrono.'},
   quiest:{n:'Qui est-ce ? de la crew',i:'🕵️',d:'Une photo floutée devient nette : le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3},
+  agent:{n:'La Taupe',i:'🕶️',need:()=>!S||S.players.length>=3,d:'Deux agents ont le même mot secret, la taupe ne le connaît pas. Chacun donne un indice, puis vous votez pour démasquer la taupe.'},
   mime:{n:'Le mime',i:'🎭',d:'Chacun son tour, choisissez un artiste et mimez-le sans parler. Chaque bonne réponse rapporte des canards au mimeur et à celui qui trouve.'},
   defi:{n:'Défi IRL',i:'🎤',d:'Un défi dans la vraie vie. Vous désignez vous-mêmes le gagnant.'},
 };
@@ -599,20 +600,11 @@ const QUIZ=[
 ];
 const ARTISTS=['Katy Perry','The Cure','Gorillaz','Orelsan','Lorde','Gims','Twenty One Pilots','Julien Clerc','Vanessa Paradis','Keny Arkana','Bob Sinclar','Mosimann','Theodora','Disiz','Bigflo & Oli','Hamza','Asaf Avidan','Jok\'air','Yamê','The Young Gods'];
 const DEFIS=[
-  'Chacun son tour : chante le refrain d\'un tube d\'un artiste passé au Paléo. Le plus convaincant gagne.',
+  'Partie de La Taupe : deux agents ont le même mot, la taupe ne le connaît pas. Démasquez-la !',
   'Chacun son tour : mime un artiste de la Grande Scène en 20 secondes. Celui qui fait deviner le plus vite gagne.',
-  'Chacun son tour : imite Benoît XVI qui briefe des nouveaux bénévoles. La meilleure imitation gagne.',
-  'Chacun son tour : raconte ta pire nuit d\'Aspirator en 30 secondes. L\'histoire la plus folle gagne.',
   'Le cri du festival : « Paléééééo ! ». Le plus long sans reprendre son souffle gagne.',
-  'Air guitar sur un solo imaginaire, 15 secondes chacun. Le plus habité gagne.',
-  'Invente un cocktail digne de Panoramix avec ce qu\'il y a sur la table. Vote à main levée.',
+  'La vodka dissimulée : remplissez 3 shots, deux d\'eau et un de vodka, et mélangez-les sans regarder. Chacun en prend un et le boit en même temps, sans grimacer. Désignez ensuite celui qui a bu la vodka : s\'il n\'est pas démasqué, il gagne. Sinon, ceux qui l\'ont démasqué gagnent.',
   'À tour de rôle, citez un artiste passé au Paléo. Pas de répétition. Le premier qui sèche est éliminé.',
-  'Trouvez le meilleur nom pour une nouvelle scène du Paléo. Vote à main levée.',
-  'Le bruit le plus réaliste d\'un râteau qui ramasse des gobelets à 4 h du matin.',
-  'Dites le plus vite possible, trois fois : « Six scènes, six bracelets, six gorgées ». Sans erreur.',
-  'Statue ! Le premier qui bouge ou qui rigole a perdu. Le dernier immobile gagne.',
-  'Chantez « Joyeux anniversaire » : un façon Grande Scène, un façon électro, un façon druide.',
-  'Chacun son tour : fais la meilleure annonce micro de fermeture du festival.',
 ];
 const MYST=[
   {i:'⛈️',t:'Orage sur l\'Asse',x:'Tout le monde perd 3 canards (sauf bracelet VIP).',f:async()=>{for(const o of S.players){if(o.vip){o.vip=false;toast(`🎫 ${o.nick} est protégé`)}else lose(o,3,true)}renderHUD()}},
@@ -1631,9 +1623,37 @@ async function mgMime(players,{duel}={}){
   }
   mgClose();return sc;
 }
+const TAUPE_W=[['Festival','Grande Scène'],['Festival','Bracelet'],['Festival','Gobelet consigné'],['Festival','Camping'],['Festival','Râteau'],['Festival','Poubelle bleue'],['Festival','Tente'],['Festival','Feu d\'artifice'],['Festival','Bénévole'],['Festival','Food truck'],['Boissons','Génépi'],['Boissons','Bière'],['Boissons','Ricard'],['Boissons','Jack Daniel\'s'],['Boissons','Vodka'],['Boissons','Champagne'],['Boissons','Mojito'],['Boissons','Vin chaud'],['Restaurant','Raclette'],['Restaurant','Fondue'],['Restaurant','Tartiflette'],['Restaurant','Croque-monsieur'],['Restaurant','Sommelier'],['Restaurant','Plateau de fromages'],['Restaurant','Old Fashioned'],['Musique','Guitare'],['Musique','Batterie'],['Musique','DJ'],['Musique','Rappeur'],['Musique','Accordéon'],['Musique','Karaoké'],['Animaux','Canard'],['Animaux','Taupe'],['Animaux','Gorille'],['Animaux','Abeille'],['Animaux','Sanglier'],['Objets','Lunettes de soleil'],['Objets','Casquette'],['Objets','Lampe frontale'],['Objets','Gourde'],['Objets','Sac à dos'],['Lieux','Lac Léman'],['Lieux','Montagne'],['Lieux','Plage'],['Lieux','Gare'],['Lieux','Discothèque']];
+let taupeDeck=[];
+async function mgAgent(players,{duel}={}){
+  const stage=mgOpen('La Taupe','🕶️',true);
+  const sc=zero(players);
+  if(!taupeDeck.length)taupeDeck=shuffle(TAUPE_W);const [theme,word]=taupeDeck.pop();
+  const taupe=pick(players);
+  await ready(stage,'Qui est la taupe ?',`Thème : <b>${theme}</b>. Chacun regarde l'écran à son tour, en cachette. Les agents voient le mot secret, la taupe ne le voit pas.`);
+  for(const p of players){
+    await new Promise(go=>{stage.innerHTML=`<div class="turnchip" style="--pc:${p.color}">${avatarHTML(p,36)} ${esc(p.nick)}</div><div class="q">Les autres, détournez les yeux !</div><button class="btn primary" id="see">👀 Je suis ${esc(p.nick)}, voir mon rôle</button>`;$('#see').onclick=go});
+    await new Promise(go=>{stage.innerHTML=p===taupe?`<div class="qnum">Thème : ${theme}</div><div class="defi" style="font-size:clamp(34px,6vw,60px)">🕶️ Tu es la taupe !</div><div class="hint">Tu ne connais pas le mot. Écoute les indices et fonds-toi dans la masse.</div><button class="btn primary" id="ok">Compris, cacher</button>`
+      :`<div class="qnum">Thème : ${theme}</div><div class="qnum">Ton mot secret</div><div class="defi" style="font-size:clamp(34px,6vw,60px)">${esc(word)}</div><div class="hint">Donne des indices sans trop en dire : la taupe écoute.</div><button class="btn primary" id="ok">Compris, cacher</button>`;$('#ok').onclick=go});
+  }
+  const order=shuffle(players.slice());while(order[0]===taupe)order.push(order.shift());
+  for(let r=1;r<=2;r++)for(const p of order){
+    await new Promise(go=>{let done=false;stage.innerHTML=`<div class="qnum">Tour d'indices ${r}/2 · thème ${theme}</div><div class="turnchip" style="--pc:${p.color}">${avatarHTML(p,36)} ${esc(p.nick)}</div><div class="q">Donne un mot indice à voix haute.</div><div class="timer" id="tmr" style="font-size:48px">20 s</div><button class="btn primary" id="nx">Indice donné</button>`;
+      $('#nx').onclick=()=>{done=true;go()};const end=Date.now()+20000;(async()=>{while(!done&&Date.now()<end){await sleep(200);const t=$('#tmr');if(t)t.textContent=Math.ceil((end-Date.now())/1000)+' s'}if(!done){SFX.buzz();const t=$('#tmr');if(t)t.textContent='Temps écoulé !'}})()});
+  }
+  const accused=await new Promise(r=>{stage.innerHTML=`<div class="q">Comptez jusqu'à 3 et pointez tous la taupe du doigt.<br>Qui a le plus de votes ?</div><div class="pickrow">${players.map(p=>`<button class="pick" data-id="${p.id}" style="--pc:${p.color}">${avatarHTML(p,40)} ${esc(p.nick)}</button>`).join('')}<button class="pick" data-id="" style="--pc:#666">🤷 Égalité</button></div><div class="hint">En cas d'égalité, la taupe s'en sort.</div>`;stage.querySelectorAll('.pick').forEach(b=>b.onclick=()=>r(players.find(p=>p.id===b.dataset.id)||null))});
+  const agents=players.filter(p=>p!==taupe);
+  if(accused!==taupe){SFX.bad();sc[taupe.id]=3;
+    await new Promise(go=>{stage.innerHTML=`<div class="q">Raté ! La taupe était <b style="color:${taupe.color}">${esc(taupe.nick)}</b> 🕶️</div><div class="hint">Le mot était « ${esc(word)} ». La taupe gagne.</div><button class="btn primary" id="nx">Suite</button>`;$('#nx').onclick=go})}
+  else{SFX.coin();
+    const ok=await new Promise(r=>{stage.innerHTML=`<div class="q">Démasquée ! ${esc(taupe.nick)} était bien la taupe 🕶️</div><div class="hint">Dernière chance : ${esc(taupe.nick)} donne le mot secret à voix haute.</div><div class="trow"><button class="btn" id="yes">Il a trouvé « ${esc(word)} »</button><button class="btn primary" id="no">Raté</button></div>`;$('#yes').onclick=()=>r(true);$('#no').onclick=()=>r(false)});
+    if(ok){sc[taupe.id]=2}else agents.forEach(a=>sc[a.id]=2);
+    await new Promise(go=>{stage.innerHTML=`<div class="q">${ok?`${esc(taupe.nick)} sauve sa peau en trouvant le mot !`:`Les agents gagnent ! Le mot était « ${esc(word)} ».`}</div><button class="btn primary" id="nx">Suite</button>`;$('#nx').onclick=go})}
+  mgClose();return sc;
+}
 async function mgDefi(players,{duel}={}){
   const stage=mgOpen('Défi IRL','🎤',true);
-  let d=nextDefi();if(/mime/i.test(d)){mgClose();return mgMime(players,{duel})}const sc=zero(players);
+  let d=nextDefi();if(/mime/i.test(d)){mgClose();return mgMime(players,{duel})}if(/La Taupe/.test(d)&&players.length>=3){mgClose();return mgAgent(players,{duel})}if(/La Taupe/.test(d))d=nextDefi();const sc=zero(players);
   stage.innerHTML=`<div class="defi">${esc(d)}</div><div class="timer" id="tmr"></div><div class="trow"><button class="btn" id="t30">⏱ Lancer 30 s</button><button class="btn primary" id="judge">Désigner le gagnant</button></div>`;
   let stop=false;
   $('#t30').onclick=async()=>{const b=$('#t30');b.disabled=true;const end=Date.now()+30000;while(Date.now()<end&&!stop){await sleep(200);const t=$('#tmr');if(t)t.textContent=Math.ceil((end-Date.now())/1000)+' s'}if(!stop){SFX.buzz();const t=$('#tmr');if(t)t.textContent='Temps écoulé !'}};
@@ -1945,7 +1965,7 @@ async function mgQuiEst(players,{duel}={}){
   mgClose();return sc;
 }
 
-const RUN={plusmoins:mgPlusMoins,dessin:mgDessin,interdit:mgMotInterdit,taupe:mgTaupe,corde:mgCorde,chrono:mgChrono,quiest:mgQuiEst,theme:mgTheme,shifumi:mgShifumi,quiz:mgQuiz,reflexe:mgReflexe,aspi:mgAspi,gobelets:p=>mgGobelets(p,20),memory:mgMemory,defi:mgDefi,mime:mgMime};
+const RUN={plusmoins:mgPlusMoins,dessin:mgDessin,interdit:mgMotInterdit,taupe:mgTaupe,corde:mgCorde,chrono:mgChrono,quiest:mgQuiEst,theme:mgTheme,shifumi:mgShifumi,quiz:mgQuiz,reflexe:mgReflexe,aspi:mgAspi,gobelets:p=>mgGobelets(p,20),memory:mgMemory,defi:mgDefi,mime:mgMime,agent:mgAgent};
 
 /* ---------- Règles ---------- */
 function rules(){
@@ -1956,7 +1976,7 @@ function rules(){
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
   <p><b>Pouvoirs</b> (une fois par partie) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
-  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory de la crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? de la crew, le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve) et défis IRL. Le tir à la corde ne se joue qu'en duel.</p>
+  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory de la crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? de la crew, le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
   </div>`,choices:[{label:'Compris',value:1,cls:'primary'}]});
