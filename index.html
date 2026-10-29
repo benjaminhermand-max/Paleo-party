@@ -47,7 +47,9 @@ button:focus-visible{outline:3px solid var(--duck);outline-offset:2px}
 .rkv{width:22px;text-align:center;color:var(--muted)}.rkv.up{color:#5fdc7a}.rkv.down{color:#e23b4e}
 .pcard.active{border-color:var(--pc);box-shadow:0 0 22px -6px var(--pc)}
 .pinfo{min-width:0;display:flex;flex-direction:column;gap:3px}
-.pname{font-family:var(--display);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pname{font-family:var(--display);font-size:15px;white-space:nowrap;display:flex;align-items:center;gap:8px;min-width:0}
+.pnn{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ppts{flex:none;font-size:13px;color:#2a1450;background:var(--pc);border-radius:999px;padding:1px 8px;line-height:1.4}
 .pducks{font-weight:800;font-size:20px;font-variant-numeric:tabular-nums;color:var(--duck)}
 .brs{display:flex;gap:3px}
 .brimg{width:30px;height:18px;object-fit:contain;opacity:.16;filter:grayscale(1)}
@@ -678,7 +680,7 @@ function renderHUD(){
     if(p.items.length)meta.push(p.items.map(k=>itemIcon(k,24)).join(''));
     if(p.vip)meta.push(itemIcon('vip',24));if(p.slow)meta.push('🚧');if(p.skip)meta.push(p.skip==='inf'?'🚑':'🚽');if(p.water)meta.push('💧');
     meta.push(p.powerUsed?'⚡ utilisé':'⚡ dispo');
-    h+=`<div class="pcard${S.cur===p.id?' active':''}" style="--pc:${p.color}"><div class="prank r${rk[p.id]}" title="${scoreOf(p)} points">${MEDAL[rk[p.id]]}<small>${RKN[rk[p.id]]}</small></div>${avatarHTML(p,46)}<div class="pinfo"><div class="pname">${esc(p.nick)}</div><div class="pducks">${DUCK} ${p.ducks}</div><div class="brs">${brs}</div></div><div class="pmeta">${meta.join(' ')}</div></div>`;
+    h+=`<div class="pcard${S.cur===p.id?' active':''}" style="--pc:${p.color}"><div class="prank r${rk[p.id]}" title="${scoreOf(p)} points">${MEDAL[rk[p.id]]}<small>${RKN[rk[p.id]]}</small></div>${avatarHTML(p,46)}<div class="pinfo"><div class="pname"><span class="pnn">${esc(p.nick)}</span><span class="ppts" title="Canards + bracelets">${scoreOf(p)} pts</span></div><div class="pducks">${DUCK} ${p.ducks}</div><div class="brs">${brs}</div></div><div class="pmeta">${meta.join(' ')}</div></div>`;
   }
   h+=`<div class="tools"><button class="iconbtn${overview?' on':''}" id="bMap" aria-label="Vue d'ensemble">🗺️</button><button class="iconbtn" id="bSound" aria-label="Son">${muted?'🔇':'🔊'}</button><button class="iconbtn" id="bMenu" aria-label="Menu" style="grid-column:span 2">☰</button></div>`;
   $('#hud').innerHTML=h;
