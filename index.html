@@ -563,7 +563,7 @@ const MG={
   taupe:{n:'Taupe Aspirator',i:'🕳️',d:'Chacun sa zone : tapez les déchets qui sortent des trous, évitez les bouteilles (génépi, Ricard, Jack).'},
   corde:{n:'Tir à la corde',i:'🪢',d:'Face à face : tapotez votre zone pour tirer la corde de votre côté.',duelOnly:true},
   chrono:{n:'Le chrono aveugle',i:'⏱️',d:'Buzzez quand vous pensez que 10 secondes se sont écoulées, sans voir le chrono.'},
-  quiest:{n:'Qui est-ce ? de la crew',i:'🕵️',d:'Une photo floutée devient nette : le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3},
+  quiest:{n:'Qui est-ce ? de la crew',i:'🕵️',d:'Duel Benoît XVI contre Panoramix (Bizu connaît les réponses) : une photo floutée devient nette, le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3,duelOnly:true,pair:['benoit','jeje']},
   agent:{n:'La Taupe',i:'🕶️',need:()=>!S||S.players.length>=3,d:'Deux agents ont le même mot secret, la taupe ne le connaît pas. Chacun donne un indice, puis vous votez pour démasquer la taupe.'},
   mime:{n:'Le mime',i:'🎭',d:'Chacun son tour, choisissez un artiste et mimez-le sans parler. Chaque bonne réponse rapporte des canards au mimeur et à celui qui trouve.'},
   defi:{n:'Défi IRL',i:'🎤',d:'Un défi dans la vraie vie. Vous désignez vous-mêmes le gagnant.'},
@@ -1399,8 +1399,9 @@ async function clash(p){
   await duel(p,opp);
 }
 async function duel(p,forced){
-  const game=pick(['quiz','reflexe','defi','shifumi','corde','chrono','plusmoins',...(WHO.length>=3?['quiest']:[])]);
   const opp=forced||await chooseTarget(p,'Duel ! Qui défies-tu ?',false);
+  const bj=[p.id,opp.id].sort().join()==='benoit,jeje';
+  const game=pick(['quiz','reflexe','defi','shifumi','corde','chrono','plusmoins',...(WHO.length>=3&&bj?['quiest']:[])]);
   await info(MG[game].i,`Duel : ${MG[game].n}`,`${esc(p.nick)} contre ${esc(opp.nick)}. Le gagnant pique 5 ${DUCK} au perdant.<br><small>${MG[game].d}</small>`,'#13a58e');
   const pl=[p,opp].sort((a,b)=>a.seat-b.seat);
   const sc=await RUN[game](pl,{duel:true});
@@ -1980,7 +1981,7 @@ function rules(){
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
   <p><b>Pouvoirs</b> (une fois par partie) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
-  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory de la crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? de la crew, le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel.</p>
+  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory de la crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? de la crew (en duel Benoît XVI contre Panoramix seulement), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
   </div>`,choices:[{label:'Compris',value:1,cls:'primary'}]});
@@ -2089,7 +2090,7 @@ function freeMode(reset){
   const rows=[...S.players].sort((a,b)=>FREE[b.id]-FREE[a.id]);
   t.innerHTML=`<div class="tin"><div class="logo" style="font-size:clamp(34px,6vmin,60px)">Jeux libres<span>Choisissez un mini-jeu, sans plateau</span></div>
     <div class="trow">${rows.map((p,i)=>`<span class="filebtn" style="border-color:${p.color}">${avatarHTML(p,30)} <b>${esc(p.nick)}</b> · ${FREE[p.id]} 🏆</span>`).join('')}</div>
-    <div class="fgrid">${ks.map(k=>`<button class="fcardg" data-k="${k}"><span>${MG[k].i}</span><b>${MG[k].n}</b><small>${MG[k].duelOnly?'Duel à 2':'3 joueurs'}</small></button>`).join('')}</div>
+    <div class="fgrid">${ks.map(k=>`<button class="fcardg" data-k="${k}"><span>${MG[k].i}</span><b>${MG[k].n}</b><small>${MG[k].pair?'Benoît vs Panoramix':MG[k].duelOnly?'Duel à 2':'3 joueurs'}</small></button>`).join('')}</div>
     <div class="trow"><button class="btn" id="fRand">🎲 Au hasard</button><button class="btn ghost" id="fBack">⬅ Accueil</button><button class="filebtn" id="fRst">Remettre les scores à zéro</button></div></div>`;
   t.querySelectorAll('.fcardg').forEach(b=>b.onclick=()=>freePlay(b.dataset.k));
   $('#fRand').onclick=()=>freePlay(pick(ks.filter(k=>!MG[k].duelOnly)));
@@ -2100,7 +2101,7 @@ async function freePlay(g){
   const m=MG[g];let pl=[...S.players].sort((a,b)=>a.seat-b.seat);
   $('#title').hidden=true;
   if(m.duelOnly){
-    const pairs=[[0,1],[0,2],[1,2]].map(([a,b])=>[pl[a],pl[b]]);
+    const pairs=[[0,1],[0,2],[1,2]].map(([a,b])=>[pl[a],pl[b]]).filter(pr=>!m.pair||pr.every(x=>m.pair.includes(x.id)));
     const i=await ask({icon:m.i,title:m.n,body:'Qui s\'affronte ?',color:'#13a58e',choices:[...pairs.map((pr,i)=>({label:`${pr[0].nick} vs ${pr[1].nick}`,value:i,cls:i?'':'primary'})),{label:'Annuler',value:-1,cls:'ghost'}]});
     if(i<0){freeMode();return}pl=pairs[i];
   }else{
