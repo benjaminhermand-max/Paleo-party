@@ -110,6 +110,11 @@ button:focus-visible{outline:3px solid var(--duck);outline-offset:2px}
 #app,#modal,#mg,#dice,#splash,#brshow{touch-action:none}
 #brshow .brok{margin-top:10px;font-size:clamp(18px,2.2vw,24px);padding:12px 44px;animation:fadeup .5s 1s both}
 #splash .spnext{margin-top:18px;animation:fadeup .5s .6s both}
+#splash .sp.turn{text-align:center;display:flex;flex-direction:column;align-items:center}
+#splash .spround{width:clamp(130px,17vmin,190px);height:clamp(130px,17vmin,190px);border-radius:50%;border:6px solid #fff;background:radial-gradient(circle at 35% 30%,#fff3a8,#ffd23f 45%,#e09a00);color:#2a1450;font-family:var(--display);font-size:clamp(24px,3.4vmin,36px);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;cursor:pointer;margin-top:26px;box-shadow:0 8px 0 rgba(0,0,0,.45),0 0 0 0 rgba(255,210,63,.7);animation:fadeup .5s .6s both,sppulse 1.4s 1.1s ease-in-out infinite}
+#splash .spround i{font-style:normal;font-size:.9em;margin-top:4px}
+#splash .spround:active{transform:scale(.93)}
+@keyframes sppulse{50%{box-shadow:0 8px 0 rgba(0,0,0,.45),0 0 0 22px rgba(255,210,63,0);transform:scale(1.06)}}
 #splash.crew{backdrop-filter:blur(10px) brightness(.55);-webkit-backdrop-filter:blur(10px) brightness(.55);background:linear-gradient(100deg,color-mix(in srgb,var(--pc) 55%,rgba(5,8,18,.4)) 0 46%,rgba(5,8,18,.72) 46%)}
 #splash.crew .sp{background:rgba(8,11,26,.82);border:3px solid var(--pc);border-radius:24px;padding:22px 28px;box-shadow:0 10px 40px rgba(0,0,0,.6),0 0 30px color-mix(in srgb,var(--pc) 40%,transparent);max-width:50vw}
 #splash.crew .sp small{color:#fff;opacity:.85}
@@ -1024,7 +1029,7 @@ async function gameLoop(){
 async function splash(p){
   const el=$('#splash');const f=fullOf(p);
   el.style.setProperty('--pc',p.color);
-  el.innerHTML=`${f?`<img src="${f}" alt="">`:''}<div class="sp"><small>À toi de jouer</small><b>${esc(p.nick)}</b><button class="btn primary spnext">Jouer ▶</button></div>`;
+  el.innerHTML=`${f?`<img src="${f}" alt="">`:''}<div class="sp turn"><small>À toi de jouer</small><b>${esc(p.nick)}</b><button class="spnext spround">JOUER<i>▶</i></button></div>`;
   el.hidden=false;tone(660,.1,'square',.06);tone(990,.18,'square',.06,.1);
   el.style.pointerEvents='auto';
   await new Promise(r=>el.querySelector('.spnext').onclick=r);
