@@ -556,7 +556,7 @@ const MG={
   reflexe:{n:'Lumière de scène',i:'💡',d:'Buzzez dès que la scène s\'allume. Faux départ : bloqué pour la manche. 3 manches.'},
   aspi:{n:'Aspiration',i:'🌀',d:'Tapotez votre zone le plus vite possible pendant 6 secondes.'},
   gobelets:{n:'Ramasse les gobelets',i:'🥤',d:'Chacun son tour, 20 secondes au stylet : ramassez les gobelets blancs, évitez les rouges et les bouteilles (génépi, Ricard, Jack). Ça accélère sur la fin !'},
-  memory:{n:'Memory de la crew',i:'🃏',d:'24 cartes : retrouvez les paires de photos du Paléo. Une paire trouvée = un point, et vous rejouez.'},
+  memory:{n:'Memory du crew',i:'🃏',d:'24 cartes : retrouvez les paires de photos du Paléo. Une paire trouvée = un point, et vous rejouez.'},
   shifumi:{n:'Shi-fu-mi',i:'✊',d:'Comme au Paléo : jouez avec vos mains au « Shi-Fu-Mi ! », puis chacun touche le signe qu\'il a fait. Le premier à 3 points gagne.'},
   theme:{n:'Thème en chaîne',i:'🔗',d:'La tablette donne un thème. Chacun son tour, citez un élément en 10 secondes. Celui qui sèche ou répète est éliminé. 3 manches.'},
   plusmoins:{n:'Plus ou moins',i:'🔢',d:'Une question chiffrée sur le Paléo. Chacun son tour, tapez un nombre : la tablette répond « plus » ou « moins ».'},
@@ -565,7 +565,7 @@ const MG={
   taupe:{n:'Taupe Aspirator',i:'🕳️',d:'Chacun sa zone : tapez les déchets qui sortent des trous, évitez les bouteilles (génépi, Ricard, Jack).'},
   corde:{n:'Tir à la corde',i:'🪢',d:'Face à face : tapotez votre zone pour tirer la corde de votre côté.',duelOnly:true},
   chrono:{n:'Le chrono aveugle',i:'⏱️',d:'Buzzez quand vous pensez que 10 secondes se sont écoulées, sans voir le chrono.'},
-  quiest:{n:'Qui est-ce ? de la crew',i:'🕵️',d:'Duel Benoît XVI contre Panoramix (Bizu connaît les réponses) : une photo floutée devient nette, le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3,duelOnly:true,pair:['benoit','jeje']},
+  quiest:{n:'Qui est-ce ? du crew',i:'🕵️',d:'Duel Benoît XVI contre Panoramix (Bizu connaît les réponses) : une photo floutée devient nette, le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3,duelOnly:true,pair:['benoit','jeje']},
   agent:{n:'La Taupe',i:'🕶️',need:()=>!S||S.players.length>=3,d:'Deux agents ont le même mot secret, la taupe ne le connaît pas. Chacun donne un indice, puis vous votez pour démasquer la taupe.'},
   mime:{n:'Le mime',i:'🎭',d:'Chacun son tour, choisissez un artiste et mimez-le sans parler. Chaque bonne réponse rapporte des canards au mimeur et à celui qui trouve.'},
   defi:{n:'Défi IRL',i:'🎤',d:'Un défi dans la vraie vie. Vous désignez vous-mêmes le gagnant.'},
@@ -1583,14 +1583,14 @@ async function mgGobelets(players,secs=20){
   mgClose();return sc;
 }
 async function mgMemory(players){
-  const stage=mgOpen('Memory de la crew','🃏',true);
+  const stage=mgOpen('Memory du crew','🃏',true);
   const imgs=shuffle([...MEM,...MEM_DEF.map((src,i)=>({n:'photo'+i,src}))]).slice(0,12);
   const names=shuffle(ARTISTS.filter(a=>!imgs.some(m=>m.n.toLowerCase()===a.toLowerCase()))).slice(0,12-imgs.length);
   const pool=[...imgs.map(m=>({n:m.n,src:m.src})),...names.map(n=>({n}))];
   const cols=['#ff4d5e','#7fe8ff','#ff9a3c','#ff4fd8','#a9c8ff','#ffd23f','#9fe870','#ffb3c7','#c9a7ff','#5fdc7a','#ffe08a','#8fd3ff'];
   const cards=shuffle(pool.flatMap((o,i)=>[{...o,c:cols[i]},{...o,c:cols[i]}]));
   const sc=zero(players);let turn=0,found=0,first=null,busy=false;
-  await ready(stage,'Memory de la crew',`${players.map(p=>esc(p.nick)).join(', puis ')} : retournez deux cartes à chaque tour.`);
+  await ready(stage,'Memory du crew',`${players.map(p=>esc(p.nick)).join(', puis ')} : retournez deux cartes à chaque tour.`);
   stage.innerHTML=`<div id="mturn"></div><div class="mgrid" id="mgrid">${cards.map((c,i)=>`<button class="mcard${c.src?' img':''}" data-i="${i}" style="--mc:${c.c}${c.src?`;--im:url(${c.src})`:''}" aria-label="Carte ${i+1}"></button>`).join('')}</div><div class="hint" id="msc"></div>`;
   const showTurn=()=>{const p=players[turn];$('#mturn').innerHTML=`<span class="turnchip" style="--pc:${p.color}">${avatarHTML(p,32)} À ${esc(p.nick)} de jouer</span>`;$('#msc').innerHTML=players.map(q=>`<b style="color:${q.color}">${esc(q.nick)}</b> ${sc[q.id]}`).join(' · ')};
   showTurn();
@@ -1946,7 +1946,7 @@ const LOGO='data:image/webp;base64,UklGRoarAABXRUJQVlA4WAoAAAAQAAAAZwEAZwEAQUxQS
 document.documentElement.style.setProperty('--logo',`url(${LOGO})`);
 let WHO=WHO_DEF.map(src=>({n:'',src}));
 async function mgQuiEst(players,{duel}={}){
-  const stage=mgOpen('Qui est-ce ? de la crew','🕵️');
+  const stage=mgOpen('Qui est-ce ? du crew','🕵️');
   const sc=zero(players);let handler=null;const nr=duel?1:3;
   const bz=makeBuzzers(players,p=>handler&&handler(p),players.length===2);
   players.forEach(p=>bz.set(p.id,'0 pt'));
@@ -1986,7 +1986,7 @@ function rules(){
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
   <p><b>Pouvoirs</b> (une fois par partie) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
-  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory de la crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? de la crew (en duel Benoît XVI contre Panoramix seulement), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
+  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
   </div>`,choices:[{label:'Compris',value:1,cls:'primary'}]});
@@ -2048,7 +2048,7 @@ function titleScreen(view){
     </div>`+foot('Choisissez la durée, puis lancez la partie.',1);
   }else if(TVIEW==='extras'){
     body=head('Extras')+`<div class="mpanel">
-      <h3>🃏 Memory de la crew <small>(${MEM_DEF.length+MEM.length} photos)</small></h3>
+      <h3>🃏 Memory du crew <small>(${MEM_DEF.length+MEM.length} photos)</small></h3>
       <div class="trow"><label class="filebtn">🖼️ Ajouter des photos<input type="file" accept="image/*" multiple id="memIn" hidden></label>
       <label class="filebtn">📸 Prendre une photo<input type="file" accept="image/*" capture="environment" id="memCam" hidden></label>
       ${MEM.length?'<button class="filebtn" id="memClr">Retirer mes ajouts</button>':''}</div>
