@@ -2003,7 +2003,11 @@ function loadThumb(file){
 }
 let TVIEW='main';
 /* Geste retour d'Android : ne quitte pas le jeu */
-const trapBack=()=>{try{history.pushState({pp:Date.now()},'')}catch(e){}};
+let trapN=0;
+const trapBack=()=>{if(trapN>=3)return;try{history.pushState({pp:Date.now()},'');trapN++}catch(e){}};
+// Chrome ignore les entrées d'historique créées sans geste : on en remet une réserve à chaque toucher.
+document.addEventListener('pointerdown',()=>{while(trapN<2){const n=trapN;trapBack();if(trapN===n)break}},{capture:true,passive:true});
+trapBack();
 function backAsk(title,text,yes){
   if($('#backask'))return;
   const w=document.createElement('div');w.id='backask';
@@ -2013,9 +2017,9 @@ function backAsk(title,text,yes){
   return new Promise(r=>{$('#baY').onclick=()=>{w.remove();r(true)};$('#baN').onclick=()=>{w.remove();r(false)}});
 }
 window.addEventListener('popstate',async()=>{
+  trapN=Math.max(0,trapN-1);trapBack();
   const inTitle=!$('#title').hidden;
-  if(inTitle&&!(S&&S.free)){if(TVIEW!=='main'){trapBack();titleScreen('main')}return}
-  trapBack();
+  if(inTitle&&!(S&&S.free)){if(TVIEW!=='main')titleScreen('main');return}
   if(S&&S.free){if(inTitle){S=null;titleScreen('main');return}
     const ok=await backAsk('Quitter le mini-jeu ?','Tu reviens au menu principal.','Retour au menu');if(ok)location.reload();return}
   if(S&&S.phase!=='end'){
@@ -2025,7 +2029,6 @@ window.addEventListener('popstate',async()=>{
 });
 function titleScreen(view){
   if(view)TVIEW=view;
-  if(TVIEW!=='main')trapBack();
   const t=$('#title');t.hidden=false;
   let saved=load('paleo-save');
   if(saved&&(saved.v!==2||!saved.players||saved.players.some(p=>!N[p.pos]))){unstore('paleo-save');saved=null}
