@@ -555,6 +555,7 @@ const MG={
   corde:{n:'Tir à la corde',i:'🪢',d:'Face à face : tapotez votre zone pour tirer la corde de votre côté.',duelOnly:true},
   chrono:{n:'Le chrono aveugle',i:'⏱️',d:'Buzzez quand vous pensez que 10 secondes se sont écoulées, sans voir le chrono.'},
   quiest:{n:'Qui est-ce ? de la crew',i:'🕵️',d:'Une photo floutée devient nette : le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3},
+  mime:{n:'Le mime',i:'🎭',d:'Chacun son tour, mimez l\'artiste affiché sans parler. Chaque bonne réponse rapporte des canards au mimeur et à celui qui trouve.'},
   defi:{n:'Défi IRL',i:'🎤',d:'Un défi dans la vraie vie. Vous désignez vous-mêmes le gagnant.'},
 };
 const QUIZ=[
@@ -1422,10 +1423,11 @@ async function endRoundGame(){
   const vals=[6,3,0];let rank=0;const rows=[];
   sorted.forEach((p,i)=>{
     if(i>0&&sc[p.id]<sc[sorted[i-1].id])rank=i;
-    let r=sc[p.id]<=0?0:vals[rank];
+    let r=sc[p.id]<=0||sc._direct?0:vals[rank];
     if(r>0&&S.bizuDouble&&p.id==='bizu'&&rank===0)r*=2;
     p.ducks+=r;rows.push({p,r,s:sc[p.id],rank});
   });
+  if(sc._direct)rows.forEach(x=>x.r=x.s*2);
   S.forced=null;S.bizuDouble=false;SFX.fanfare();renderHUD();
   await ask({icon:'🏁',title:'Résultats',color:'#13a58e',body:rows.map(x=>`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0">${['🥇','🥈','🥉'][x.rank]} ${avatarHTML(x.p,34)} <b>${esc(x.p.nick)}</b> · ${x.s} pt${x.s>1?'s':''} · <b style="color:var(--duck)">+${x.r} ${DUCK}</b></div>`).join(''),choices:[{label:'Suite',value:1,cls:'primary'}]});
   await showRanking(before);
@@ -1605,9 +1607,33 @@ async function mgMemory(players){
   });
   mgClose();return sc;
 }
+const MIMES=['Stromae','Indochine','-M-','Shaka Ponk','Angèle','Orelsan','Muse','Sting','Lenny Kravitz','The Cure','David Guetta','Zaz','Bigflo & Oli','Vianney','Pharrell Williams','Louane','Gims','Patrick Bruel','Christine and the Queens','Iggy Pop','Rammstein','Bob Dylan','Johnny Hallyday','Michael Jackson','Freddie Mercury','Elvis Presley','Madonna','Lady Gaga','Daft Punk','Calogero','Julien Doré','Juliette Armanet','Clara Luciani','PNL','Booba','Jul','Soprano','Kendji Girac','Céline Dion','ACDC','Kiss','Les Vieilles Canailles','Mika','Ed Sheeran','Coldplay','Rihanna','Bob Marley','Manu Chao','Renaud','Francis Cabrel'];
+let mimeDeck=[];
+async function mgMime(players,{duel}={}){
+  const stage=mgOpen('Le mime','🎭',true);
+  const pay=!duel&&S&&!S.free,DUCKS=2,ROUNDS_M=duel?2:2,SECS=30;
+  const sc=zero(players);sc._direct=pay;
+  await ready(stage,`${ROUNDS_M} tours · ${SECS} secondes par mime`,`Chacun son tour, le mimeur regarde seul l'écran et mime l'artiste sans parler.${pay?` Bonne réponse : +${DUCKS} ${DUCK} pour le mimeur et +${DUCKS} ${DUCK} pour celui qui trouve.`:''}`);
+  for(let r=0;r<ROUNDS_M;r++)for(const m of players){
+    if(!mimeDeck.length)mimeDeck=shuffle(MIMES);const word=mimeDeck.pop();
+    await new Promise(go=>{stage.innerHTML=`<div class="turnchip" style="--pc:${m.color}">${avatarHTML(m,36)} ${esc(m.nick)} mime</div><div class="q">Les autres, ne regardez pas l'écran !</div><button class="btn primary" id="see">👀 Je suis ${esc(m.nick)}, montrer l'artiste</button>`;$('#see').onclick=go});
+    await new Promise(go=>{stage.innerHTML=`<div class="turnchip" style="--pc:${m.color}">${avatarHTML(m,36)} ${esc(m.nick)}</div><div class="qnum">Tu dois mimer</div><div class="defi" style="font-size:clamp(34px,6vw,64px)">${esc(word)}</div><button class="btn primary" id="go">C'est mémorisé, lancer le chrono</button>`;$('#go').onclick=go});
+    const others=players.filter(p=>p!==m);let done=false;
+    const res=await new Promise(fin=>{
+      stage.innerHTML=`<div class="turnchip" style="--pc:${m.color}">${avatarHTML(m,36)} ${esc(m.nick)} mime…</div><div class="timer" id="tmr" style="font-size:56px">${SECS} s</div><div class="q">Qui a trouvé ?</div><div class="pickrow">${others.map(p=>`<button class="pick" data-id="${p.id}" style="--pc:${p.color}">${avatarHTML(p,40)} ${esc(p.nick)}</button>`).join('')}<button class="pick" data-id="" style="--pc:#666">❌ Personne</button></div>`;
+      stage.querySelectorAll('.pick').forEach(b=>b.onclick=()=>{done=true;fin(b.dataset.id)});
+      const end=Date.now()+SECS*1000;(async()=>{while(!done&&Date.now()<end){await sleep(200);const t=$('#tmr');if(t)t.textContent=Math.ceil((end-Date.now())/1000)+' s'}if(!done){SFX.buzz();const t=$('#tmr');if(t)t.textContent='Temps écoulé !'}})();
+    });
+    if(res){const f=players.find(p=>p.id===res);sc[m.id]++;sc[f.id]++;SFX.coin();
+      if(pay){m.ducks+=DUCKS;f.ducks+=DUCKS;renderHUD()}
+      await new Promise(go=>{stage.innerHTML=`<div class="q">✅ ${esc(f.nick)} a trouvé « ${esc(word)} » !</div>${pay?`<div class="hint">+${DUCKS} ${DUCK} pour ${esc(m.nick)} et +${DUCKS} ${DUCK} pour ${esc(f.nick)}</div>`:''}<button class="btn primary" id="nx">Mime suivant</button>`;$('#nx').onclick=go})}
+    else await new Promise(go=>{stage.innerHTML=`<div class="q">❌ Personne n'a trouvé. C'était « ${esc(word)} ».</div><button class="btn primary" id="nx">Mime suivant</button>`;$('#nx').onclick=go});
+  }
+  mgClose();return sc;
+}
 async function mgDefi(players,{duel}={}){
   const stage=mgOpen('Défi IRL','🎤',true);
-  const d=nextDefi();const sc=zero(players);
+  let d=nextDefi();if(/mime/i.test(d)){mgClose();return mgMime(players,{duel})}const sc=zero(players);
   stage.innerHTML=`<div class="defi">${esc(d)}</div><div class="timer" id="tmr"></div><div class="trow"><button class="btn" id="t30">⏱ Lancer 30 s</button><button class="btn primary" id="judge">Désigner le gagnant</button></div>`;
   let stop=false;
   $('#t30').onclick=async()=>{const b=$('#t30');b.disabled=true;const end=Date.now()+30000;while(Date.now()<end&&!stop){await sleep(200);const t=$('#tmr');if(t)t.textContent=Math.ceil((end-Date.now())/1000)+' s'}if(!stop){SFX.buzz();const t=$('#tmr');if(t)t.textContent='Temps écoulé !'}};
@@ -1919,7 +1945,7 @@ async function mgQuiEst(players,{duel}={}){
   mgClose();return sc;
 }
 
-const RUN={plusmoins:mgPlusMoins,dessin:mgDessin,interdit:mgMotInterdit,taupe:mgTaupe,corde:mgCorde,chrono:mgChrono,quiest:mgQuiEst,theme:mgTheme,shifumi:mgShifumi,quiz:mgQuiz,reflexe:mgReflexe,aspi:mgAspi,gobelets:p=>mgGobelets(p,20),memory:mgMemory,defi:mgDefi};
+const RUN={plusmoins:mgPlusMoins,dessin:mgDessin,interdit:mgMotInterdit,taupe:mgTaupe,corde:mgCorde,chrono:mgChrono,quiest:mgQuiEst,theme:mgTheme,shifumi:mgShifumi,quiz:mgQuiz,reflexe:mgReflexe,aspi:mgAspi,gobelets:p=>mgGobelets(p,20),memory:mgMemory,defi:mgDefi,mime:mgMime};
 
 /* ---------- Règles ---------- */
 function rules(){
@@ -1930,7 +1956,7 @@ function rules(){
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
   <p><b>Pouvoirs</b> (une fois par partie) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
-  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory de la crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? de la crew et défis IRL. Le tir à la corde ne se joue qu'en duel.</p>
+  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory de la crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? de la crew, le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve) et défis IRL. Le tir à la corde ne se joue qu'en duel.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
   </div>`,choices:[{label:'Compris',value:1,cls:'primary'}]});
