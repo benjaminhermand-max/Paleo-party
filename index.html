@@ -1492,7 +1492,7 @@ async function dzTrack([a,t]){
   return best?{a,t,url:best.preview,cover:best.album&&best.album.cover_medium}:null;
 }
 async function mgBlind(players,{duel}={}){
-  const n=duel?3:6;
+  const n=duel?4:6;
   const stage=mgOpen('Blind test','🎧');
   const sc=zero(players);let handler=null;
   stage.innerHTML=`<div class="q">🎧 Préparation des morceaux…</div><div class="hint">Connexion à Deezer</div>`;
@@ -1501,11 +1501,13 @@ async function mgBlind(players,{duel}={}){
   if(!tracks.length){stage.innerHTML=`<div class="q">😕 Impossible de joindre Deezer</div><div class="hint">Vérifie la connexion internet de la tablette. Le blind test est annulé pour ce tour.</div><button class="btn primary" id="nx">Continuer</button>`;await new Promise(r=>$('#nx').onclick=r);mgClose();return sc}
   const bz=makeBuzzers(players,p=>handler&&handler(p),players.length===2);
   players.forEach(p=>bz.set(p.id,'0 pt'));
-  await ready(stage,`${tracks.length} morceaux`,'Montez le son ! Buzzez dès que vous reconnaissez la chanson, puis donnez l\'artiste et le titre à voix haute. Le groupe valide. Raté : bloqué pour ce morceau.');
+  await ready(stage,`${tracks.length} morceaux`,'Montez le son ! Buzzez dès que vous reconnaissez la chanson : 4 propositions apparaissent, touchez la bonne. Raté : bloqué pour ce morceau, la musique reprend pour les autres.');
   const au=new Audio();au.preload='auto';
   for(let i=0;i<tracks.length;i++){const tk=tracks[i];
     await new Promise(done=>{
       let responder=null,over=false;const locked=new Set();
+      const fakes=shuffle(BLIND.filter(x=>x[1]!==tk.t)).slice(0,3).map(x=>({a:x[0],t:x[1],ok:false}));
+      const opts=shuffle([{a:tk.a,t:tk.t,ok:true},...fakes]);const ko=new Set();
       au.src=tk.url;au.currentTime=0;au.volume=1;au.muted=false;
       stage.innerHTML=`<div class="qnum">Morceau ${i+1} / ${tracks.length}</div><div class="vinyl" id="vin"><span>🎵</span></div><div class="timer" id="tmr">30 s</div><div class="hint" id="hint">Buzzez dès que vous reconnaissez !</div><div id="judge"></div><button class="btn ghost" id="skip">Personne ne trouve</button>`;
       const hint=$('#hint'),judge=$('#judge'),vin=$('#vin');
@@ -1519,11 +1521,12 @@ async function mgBlind(players,{duel}={}){
       au.onplay=()=>vin.classList.add('spin');au.onpause=()=>vin.classList.remove('spin');
       au.onended=()=>{if(!over&&!responder)reveal('Temps écoulé ! C\'était…')};
       handler=p=>{if(over||responder||locked.has(p.id))return;responder=p;au.pause();SFX.buzz();bz.state(p.id,'on');
-        hint.innerHTML=`<b style="color:${p.color}">${esc(p.nick)}</b> donne l'artiste et le titre…`;
-        judge.innerHTML=`<div class="trow"><button class="btn primary" id="okb">✅ Bonne réponse</button><button class="btn" id="kob">❌ Raté</button></div>`;
-        $('#okb').onclick=()=>{sc[p.id]++;bz.set(p.id,sc[p.id]+' pt');SFX.coin();reveal(`Bravo <b style="color:${p.color}">${esc(p.nick)}</b> !`)};
-        $('#kob').onclick=()=>{SFX.bad();locked.add(p.id);bz.state(p.id,'locked');responder=null;judge.innerHTML='';
-          if(locked.size>=players.length)reveal('Personne n\'a trouvé. C\'était…');else{hint.textContent='Raté ! Les autres peuvent buzzer.';au.play().catch(()=>{})}}};
+        hint.innerHTML=`<b style="color:${p.color}">${esc(p.nick)}</b>, touche la bonne chanson !`;
+        judge.innerHTML=`<div class="opts">${opts.map((o,k)=>`<button class="opt${ko.has(k)?' ko':''}" data-k="${k}" ${ko.has(k)?'disabled':''}>${esc(o.t)}<br><small>${esc(o.a)}</small></button>`).join('')}</div>`;
+        judge.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;
+          if(opts[k].ok){sc[p.id]++;bz.set(p.id,sc[p.id]+' pt');SFX.coin();reveal(`Bravo <b style="color:${p.color}">${esc(p.nick)}</b> !`)}
+          else{SFX.bad();ko.add(k);locked.add(p.id);bz.state(p.id,'locked');responder=null;judge.innerHTML='';
+            if(locked.size>=players.length)reveal('Personne n\'a trouvé. C\'était…');else{hint.textContent='Raté ! Les autres peuvent buzzer.';au.play().catch(()=>{})}}})};
       $('#skip').onclick=()=>reveal('C\'était…');
     });
   }
@@ -2041,7 +2044,7 @@ function rules(){
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
   <p><b>Pouvoirs</b> (une fois par partie) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
-  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
+  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, 4 en duel, avec 4 propositions après le buzz ; il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
   </div>`,choices:[{label:'Compris',value:1,cls:'primary'}]});
