@@ -1,7 +1,7 @@
 {
   "name": "Paléo Party",
   "short_name": "Paléo Party",
-  "description": "Le jeu de plateau de la Night Crew",
+  "description": "Le jeu des Aspirators",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

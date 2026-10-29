@@ -2029,7 +2029,7 @@ function titleScreen(view){
   const t=$('#title');t.hidden=false;
   let saved=load('paleo-save');
   if(saved&&(saved.v!==2||!saved.players||saved.players.some(p=>!N[p.pos]))){unstore('paleo-save');saved=null}
-  const head=(ttl)=>`<div class="mhead"><img class="tlogo sm" src="${LOGO}" alt="Logo Team Padre"><div class="logo">Paléo Party<span>Le jeu de la Night Crew</span></div><div class="mbanner">${ttl}</div></div>`;
+  const head=(ttl)=>`<div class="mhead"><img class="tlogo sm" src="${LOGO}" alt="Logo Team Padre"><div class="logo">Paléo Party<span>Le jeu des Aspirators</span></div><div class="mbanner">${ttl}</div></div>`;
   const foot=(txt,back)=>`<div class="mfoot">${back?'<button class="mback" id="mBack" aria-label="Retour">↩</button>':'<span></span>'}<span id="mdesc">${txt}</span><button class="mback" id="bFs" aria-label="Plein écran">⛶</button></div>`;
   let body='';
   if(TVIEW==='main'){
