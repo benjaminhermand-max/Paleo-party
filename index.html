@@ -264,6 +264,8 @@ body.mgopen{background:#0b1020}
 .mgrid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:1fr;gap:8px;width:min(1000px,100%);flex:1;min-height:0}
 .mcard{border-radius:14px;border:2px solid var(--line);background:linear-gradient(160deg,#28336a,#151c3a);font-family:var(--display);font-size:clamp(12px,1.7vw,19px);display:grid;place-items:center;padding:6px;text-align:center;min-height:56px;color:var(--muted)}
 .mcard:not(.up){background:var(--logo) center/72% no-repeat,linear-gradient(160deg,#1f3a24,#0d1a12);border-color:#3f8a3a}
+#backask{position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:rgba(5,8,18,.8);padding:16px}
+#backask .card{max-width:520px}
 .menu{max-width:1000px;min-height:100%;justify-content:space-between;gap:14px}
 .mhead{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .mhead .logo{font-size:clamp(36px,6.5vw,72px)}
@@ -1992,8 +1994,30 @@ function loadThumb(file){
   return new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=220;const s=Math.min(im.width,im.height);c.getContext('2d').drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,220,220);res(c.toDataURL('image/jpeg',.82))};im.onerror=()=>res(null);im.src=fr.result};fr.readAsDataURL(file)});
 }
 let TVIEW='main';
+/* Geste retour d'Android : ne quitte pas le jeu */
+const trapBack=()=>{try{history.pushState({pp:Date.now()},'')}catch(e){}};
+function backAsk(title,text,yes){
+  if($('#backask'))return;
+  const w=document.createElement('div');w.id='backask';
+  w.innerHTML=`<div class="card"><div class="ic">🏕️</div><h2>${title}</h2><p>${text}</p><div class="trow"><button class="btn primary" id="baY">${yes}</button><button class="btn ghost" id="baN">Continuer à jouer</button></div></div>`;
+  document.body.appendChild(w);
+  $('#baN').onclick=()=>w.remove();
+  return new Promise(r=>{$('#baY').onclick=()=>{w.remove();r(true)};$('#baN').onclick=()=>{w.remove();r(false)}});
+}
+window.addEventListener('popstate',async()=>{
+  const inTitle=!$('#title').hidden;
+  if(inTitle&&!(S&&S.free)){if(TVIEW!=='main'){trapBack();titleScreen('main')}return}
+  trapBack();
+  if(S&&S.free){if(inTitle){S=null;titleScreen('main');return}
+    const ok=await backAsk('Quitter le mini-jeu ?','Tu reviens au menu principal.','Retour au menu');if(ok)location.reload();return}
+  if(S&&S.phase!=='end'){
+    const ok=await backAsk('Retour au menu ?','La partie est sauvegardée. Tu pourras la reprendre depuis Jeu de plateau → Reprendre.','Sauvegarder et quitter');
+    if(ok){save();location.reload()}
+  }
+});
 function titleScreen(view){
   if(view)TVIEW=view;
+  if(TVIEW!=='main')trapBack();
   const t=$('#title');t.hidden=false;
   let saved=load('paleo-save');
   if(saved&&(saved.v!==2||!saved.players||saved.players.some(p=>!N[p.pos]))){unstore('paleo-save');saved=null}
@@ -2056,6 +2080,7 @@ function titleScreen(view){
 }
 let FREE={};
 function freeMode(reset){
+  trapBack();
   if(reset||!S||!S.free){newGame(ROUNDS);S.free=true;S.phase='free';FREE={};S.players.forEach(p=>FREE[p.id]=0)}
   const t=$('#title');t.hidden=false;
   const ks=Object.keys(MG).filter(k=>!MG[k].need||MG[k].need());
@@ -2090,6 +2115,7 @@ async function freePlay(g){
   if(again)freePlay(g);else freeMode();
 }
 async function start(fresh){
+  trapBack();
   if(hymn)hymn.volume=.25;
   $('#title').hidden=true;$('#title').innerHTML='';
   try{if(navigator.wakeLock)navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}
