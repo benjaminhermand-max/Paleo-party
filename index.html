@@ -2217,16 +2217,14 @@ async function start(fresh){
   if(S.mods)for(const k in S.mods)if(N[k])N[k].t=S.mods[k];
   buildBoard();renderHUD();setVB(fullView());
   if(fresh){
-    const ord=S.order.map(i=>S.players[i]);
     await playVid(INTRO_VID,'Paléo Party',5.8);await presentCrew();
-    await ask({icon:'🎪',title:'Bienvenue au Paléo Party !',wide:true,color:'#ffd23f',body:`<div class="rules" style="text-align:left">
-      <p>🏆 <b>Le but :</b> finir le festival avec le plus de canards ${DUCK}. Chaque bracelet de scène vaut ${BR_VAL} canards à la fin, et les 6 bracelets rapportent ${BR_BONUS} canards de bonus.</p>
-      <p>🎲 <b>À ton tour :</b> lance le dé et avance. Sur un 6, tu distribues des gorgées. Aux carrefours, des flèches jaunes montrent où tu peux aller.</p>
-      <p>🎟️ <b>Les bracelets :</b> en passant devant une scène, tu peux acheter son bracelet en canards et en gorgées. Plus la scène est grande, plus c'est cher.</p>
-      <p>🔵 +${BV()} canards · 🔴 −${BV()} canards · 🍺 gorgées · 💀 cul sec ou shot · 🎡 roue de la fortune · ❓ mystère · VS duel… <b>Touche une case</b> pour voir son effet.</p>
-      <p>🕹️ <b>Fin de tour :</b> un mini-jeu pour tout le monde (1er +6, 2e +3). Deux joueurs sur la même case : duel !</p>
-      <p>⚡ <b>Ton pouvoir :</b> une seule fois par partie, bouton en bas à droite.</p>
-      <p>🌀 À mi-parcours, les Aspirators débarquent et le plateau devient plus dur.</p></div>`,choices:[{label:'C\'est compris, on y va !',value:1,cls:'primary'},{label:'📖 Toutes les règles',value:2,cls:'ghost'}]}).then(v=>v===2?rules():0);
+    await ask({icon:'🎪',title:'Bienvenue au Paléo Party !',color:'#ffd23f',body:`<p style="font-size:20px;line-height:1.45">🏆 <b>Le but :</b> finir le festival avec le plus de canards ${DUCK} et de bracelets de scène 🎟️.</p><p style="font-size:18px;line-height:1.45">Pour ça, gagnez les mini-jeux, achetez les bracelets en passant devant les scènes… et méfiez-vous des pièges du plateau !</p>`,choices:[{label:'C\'est parti !',value:1,cls:'primary'},{label:'📖 Toutes les règles',value:2,cls:'ghost'}]}).then(v=>v===2?rules():0);
+    // Ordre de jeu tiré à la roue
+    await info('🎡','Qui commence ?','La roue va désigner l\'ordre de jeu.','#ffd23f');
+    {const left=S.players.map((p,i)=>i),ord=[];
+      while(left.length>1){const k=await spinWheel(left.map(i=>({t:S.players[i].nick,c:S.players[i].color})),ord.length?'Qui joue en 2e ?':'Qui joue en 1er ?');ord.push(left.splice(k,1)[0])}
+      ord.push(left[0]);S.order=ord;save()}
+    const ord=S.order.map(i=>S.players[i]);
     await ask({icon:'⛺',title:'Réveil au camping',body:`<p>Chacun part avec 5 ${DUCK}. Ordre de jeu :</p>${ord.map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0"><b>${i+1}.</b> ${avatarHTML(p,36)} <b style="color:${p.color}">${esc(p.nick)}</b></div>`).join('')}<p><small>Touche une case du plateau à tout moment pour voir son effet.</small></p>`,choices:[{label:'Ouvrez les portes !',value:1,cls:'primary'}]});
     if(hymn)hymn.pause();
   }
