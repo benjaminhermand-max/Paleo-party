@@ -600,7 +600,7 @@ const MG={
   reflexe:{n:'Lumière de scène',i:'💡',d:'Buzzez dès que la scène s\'allume. Faux départ : bloqué pour la manche. 3 manches.'},
   aspi:{n:'Aspiration',i:'🌀',d:'Tapotez votre zone le plus vite possible pendant 6 secondes.'},
   gobelets:{n:'Ramasse les gobelets',i:'🥤',d:'Chacun son tour, 20 secondes au stylet : ramassez les gobelets blancs, évitez les rouges et les bouteilles (génépi, Ricard, Jack). Ça accélère sur la fin !'},
-  memory:{n:'Memory du crew',i:'🃏',d:'24 cartes : retrouvez les paires de photos du Paléo. Une paire trouvée = un point, et vous rejouez.'},
+  memory:{n:'Memory du crew',i:'🃏',d:'30 cartes : retrouvez les paires de photos du Paléo. Une paire trouvée = un point, et vous rejouez.'},
   shifumi:{n:'Shi-fu-mi',i:'✊',d:'Comme au Paléo : jouez avec vos mains au « Shi-Fu-Mi ! », puis chacun touche le signe qu\'il a fait. Le premier à 3 points gagne.'},
   theme:{n:'Thème en chaîne',i:'🔗',d:'La tablette donne un thème. Chacun son tour, citez un élément en 10 secondes. Celui qui sèche ou répète est éliminé. 3 manches.'},
   plusmoins:{n:'Plus ou moins',i:'🔢',d:'Une question chiffrée sur le Paléo. Chacun son tour, tapez un nombre : la tablette répond « plus » ou « moins ».'},
@@ -1755,10 +1755,10 @@ async function mgGobelets(players,secs=20){
 }
 async function mgMemory(players){
   const stage=mgOpen('Memory du crew','🃏',true);
-  const imgs=shuffle([...MEM,...MEM_DEF.map((src,i)=>({n:'photo'+i,src}))]).slice(0,12);
-  const names=shuffle(ARTISTS.filter(a=>!imgs.some(m=>m.n.toLowerCase()===a.toLowerCase()))).slice(0,12-imgs.length);
+  const imgs=shuffle([...MEM,...MEM_DEF.map((src,i)=>({n:'photo'+i,src}))]).slice(0,15);
+  const names=shuffle(ARTISTS.filter(a=>!imgs.some(m=>m.n.toLowerCase()===a.toLowerCase()))).slice(0,15-imgs.length);
   const pool=[...imgs.map(m=>({n:m.n,src:m.src})),...names.map(n=>({n}))];
-  const cols=['#ff4d5e','#7fe8ff','#ff9a3c','#ff4fd8','#a9c8ff','#ffd23f','#9fe870','#ffb3c7','#c9a7ff','#5fdc7a','#ffe08a','#8fd3ff'];
+  const cols=['#ff4d5e','#7fe8ff','#ff9a3c','#ff4fd8','#a9c8ff','#ffd23f','#9fe870','#ffb3c7','#c9a7ff','#5fdc7a','#ffe08a','#8fd3ff','#ff7b54','#b5f2ea','#f7a8ff'];
   const cards=shuffle(pool.flatMap((o,i)=>[{...o,c:cols[i]},{...o,c:cols[i]}]));
   const sc=zero(players);let turn=0,found=0,first=null,busy=false;
   await ready(stage,'Memory du crew',`${players.map(p=>esc(p.nick)).join(', puis ')} : retournez deux cartes à chaque tour.`);
@@ -2220,7 +2220,7 @@ function titleScreen(view){
       <div class="trow"><label class="filebtn">🖼️ Ajouter des photos<input type="file" accept="image/*" multiple id="memIn" hidden></label>
       <label class="filebtn">📸 Prendre une photo<input type="file" accept="image/*" capture="environment" id="memCam" hidden></label>
       ${MEM.length?'<button class="filebtn" id="memClr">Retirer mes ajouts</button>':''}</div>
-      <p class="tag" style="font-size:14px">Le Memory tire 12 photos au hasard à chaque partie.</p>
+      <p class="tag" style="font-size:14px">Le Memory tire 15 photos au hasard à chaque partie.</p>
       <h3>🎵 Hymne Aspirator</h3>
       <p class="tag" style="font-size:14px">L'hymne « Paléo 2K26 » joue sur les menus. Tu peux le remplacer pour cette tablette.</p>
       <div class="trow"><label class="filebtn">Charger un autre hymne<input type="file" accept="audio/*" id="hymnIn" hidden></label>
