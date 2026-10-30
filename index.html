@@ -372,6 +372,9 @@ body.mgopen{background:#0b1020}
 @keyframes flash{to{opacity:0}}
 .bcd{font-size:80px;width:96px;text-align:center}
 .bres{display:flex;align-items:center;gap:14px;justify-content:center;font-size:22px;margin:8px 0}.bres img{width:96px;height:96px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.5)}.bres b{font-family:var(--display);font-weight:400;color:var(--duck);font-size:26px}
+#taupeapp{position:fixed;inset:0;z-index:200;background:#0b1020;display:flex;flex-direction:column}
+#taupeapp iframe{flex:1;width:100%;border:0;background:#fff}
+.tabar{display:flex;align-items:center;gap:12px;padding:8px 12px;background:#141a3c;border-bottom:3px solid #ffd23f}.tabar b{font-family:var(--display);font-weight:400;font-size:20px;color:var(--duck)}.tabar span{flex:1;color:var(--muted);font-size:14px}
 .fsec{width:min(1000px,100%);margin:6px 0 -4px;font-family:var(--display);font-weight:400;color:var(--duck);text-align:left}
 .fcardg.irl{border-color:#b04ad6;background:linear-gradient(160deg,#2a1a48,var(--panel))}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:min(1000px,100%)}
@@ -598,7 +601,7 @@ const MG={
   corde:{n:'Tir à la corde',i:'🪢',d:'Face à face : tapotez votre zone pour tirer la corde de votre côté.',duelOnly:true},
   chrono:{n:'Le chrono aveugle',i:'⏱️',d:'Buzzez quand vous pensez que 10 secondes se sont écoulées, sans voir le chrono.'},
   quiest:{n:'Qui est-ce ? du crew',i:'🕵️',d:'Duel Benoît XVI contre Panoramix (Bizu connaît les réponses) : une photo floutée devient nette, le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3,duelOnly:true,pair:['benoit','jeje']},
-  agent:{n:'La Taupe',i:'🕶️',need:()=>!S||S.players.length>=3,d:'Deux agents ont le même mot secret, la taupe ne le connaît pas. Chacun donne un indice, puis vous votez pour démasquer la taupe.'},
+  agent:{n:'La Taupe',i:'🕶️',need:()=>(!S||S.players.length>=3)&&navigator.onLine!==false,d:'On lance le vrai jeu La Taupe pour une manche. Ensuite, dites qui était la taupe et qui a gagné : 3 points pour la taupe si elle s\'en sort, sinon 2 points pour chaque agent.'},
   blind:{n:'Blind test',i:'🎧',d:'6 extraits d\'artistes passés au Paléo : 3 tubes et 3 morceaux moins connus. Buzzez dès que vous reconnaissez, puis donnez l\'artiste et le titre à voix haute.',need:()=>navigator.onLine!==false},
   mime:{n:'Le mime',i:'🎭',d:'Chacun son tour, choisissez un artiste et mimez-le sans parler. Chaque bonne réponse rapporte des canards au mimeur et à celui qui trouve.'},
   defi:{n:'Défi IRL',i:'🎤',d:'Un défi dans la vraie vie. Vous désignez vous-mêmes le gagnant.'},
@@ -1744,32 +1747,22 @@ async function mgMime(players,{duel}={}){
   }
   mgClose();return sc;
 }
-const TAUPE_W=[['Festival','Grande Scène'],['Festival','Bracelet'],['Festival','Gobelet consigné'],['Festival','Camping'],['Festival','Râteau'],['Festival','Poubelle bleue'],['Festival','Tente'],['Festival','Feu d\'artifice'],['Festival','Bénévole'],['Festival','Food truck'],['Boissons','Génépi'],['Boissons','Bière'],['Boissons','Ricard'],['Boissons','Jack Daniel\'s'],['Boissons','Vodka'],['Boissons','Champagne'],['Boissons','Mojito'],['Boissons','Vin chaud'],['Restaurant','Raclette'],['Restaurant','Fondue'],['Restaurant','Tartiflette'],['Restaurant','Croque-monsieur'],['Restaurant','Sommelier'],['Restaurant','Plateau de fromages'],['Restaurant','Old Fashioned'],['Musique','Guitare'],['Musique','Batterie'],['Musique','DJ'],['Musique','Rappeur'],['Musique','Accordéon'],['Musique','Karaoké'],['Animaux','Canard'],['Animaux','Taupe'],['Animaux','Gorille'],['Animaux','Abeille'],['Animaux','Sanglier'],['Objets','Lunettes de soleil'],['Objets','Casquette'],['Objets','Lampe frontale'],['Objets','Gourde'],['Objets','Sac à dos'],['Lieux','Lac Léman'],['Lieux','Montagne'],['Lieux','Plage'],['Lieux','Gare'],['Lieux','Discothèque']];
-let taupeDeck=[];
+const TAUPE_URL='https://benjaminhermand-max.github.io/la-taupe/';
 async function mgAgent(players,{duel}={}){
-  const stage=mgOpen('La Taupe','🕶️',true);
   const sc=zero(players);
-  if(!taupeDeck.length)taupeDeck=shuffle(TAUPE_W);const [theme,word]=taupeDeck.pop();
-  const taupe=pick(players);
-  await ready(stage,'Qui est la taupe ?',`Thème : <b>${theme}</b>. Chacun regarde l'écran à son tour, en cachette. Les agents voient le mot secret, la taupe ne le voit pas.`);
-  for(const p of players){
-    await new Promise(go=>{stage.innerHTML=`<div class="turnchip" style="--pc:${p.color}">${avatarHTML(p,36)} ${esc(p.nick)}</div><div class="q">Les autres, détournez les yeux !</div><button class="btn primary" id="see">👀 Je suis ${esc(p.nick)}, voir mon rôle</button>`;$('#see').onclick=go});
-    await new Promise(go=>{stage.innerHTML=p===taupe?`<div class="qnum">Thème : ${theme}</div><div class="defi" style="font-size:clamp(34px,6vw,60px)">🕶️ Tu es la taupe !</div><div class="hint">Tu ne connais pas le mot. Écoute les indices et fonds-toi dans la masse.</div><button class="btn primary" id="ok">Compris, cacher</button>`
-      :`<div class="qnum">Thème : ${theme}</div><div class="qnum">Ton mot secret</div><div class="defi" style="font-size:clamp(34px,6vw,60px)">${esc(word)}</div><div class="hint">Donne des indices sans trop en dire : la taupe écoute.</div><button class="btn primary" id="ok">Compris, cacher</button>`;$('#ok').onclick=go});
-  }
-  const order=shuffle(players.slice());while(order[0]===taupe)order.push(order.shift());
-  for(let r=1;r<=2;r++)for(const p of order){
-    await new Promise(go=>{let done=false;stage.innerHTML=`<div class="qnum">Tour d'indices ${r}/2 · thème ${theme}</div><div class="turnchip" style="--pc:${p.color}">${avatarHTML(p,36)} ${esc(p.nick)}</div><div class="q">Donne un mot indice à voix haute.</div><div class="timer" id="tmr" style="font-size:48px">20 s</div><button class="btn primary" id="nx">Indice donné</button>`;
-      $('#nx').onclick=()=>{done=true;go()};const end=Date.now()+20000;(async()=>{while(!done&&Date.now()<end){await sleep(200);const t=$('#tmr');if(t)t.textContent=Math.ceil((end-Date.now())/1000)+' s'}if(!done){SFX.buzz();const t=$('#tmr');if(t)t.textContent='Temps écoulé !'}})()});
-  }
-  const accused=await new Promise(r=>{stage.innerHTML=`<div class="q">Comptez jusqu'à 3 et pointez tous la taupe du doigt.<br>Qui a le plus de votes ?</div><div class="pickrow">${players.map(p=>`<button class="pick" data-id="${p.id}" style="--pc:${p.color}">${avatarHTML(p,40)} ${esc(p.nick)}</button>`).join('')}<button class="pick" data-id="" style="--pc:#666">🤷 Égalité</button></div><div class="hint">En cas d'égalité, la taupe s'en sort.</div>`;stage.querySelectorAll('.pick').forEach(b=>b.onclick=()=>r(players.find(p=>p.id===b.dataset.id)||null))});
-  const agents=players.filter(p=>p!==taupe);
-  if(accused!==taupe){SFX.bad();sc[taupe.id]=3;
-    await new Promise(go=>{stage.innerHTML=`<div class="q">Raté ! La taupe était <b style="color:${taupe.color}">${esc(taupe.nick)}</b> 🕶️</div><div class="hint">Le mot était « ${esc(word)} ». La taupe gagne.</div><button class="btn primary" id="nx">Suite</button>`;$('#nx').onclick=go})}
-  else{SFX.coin();
-    const ok=await new Promise(r=>{stage.innerHTML=`<div class="q">Démasquée ! ${esc(taupe.nick)} était bien la taupe 🕶️</div><div class="hint">Dernière chance : ${esc(taupe.nick)} donne le mot secret à voix haute.</div><div class="trow"><button class="btn" id="yes">Il a trouvé « ${esc(word)} »</button><button class="btn primary" id="no">Raté</button></div>`;$('#yes').onclick=()=>r(true);$('#no').onclick=()=>r(false)});
-    if(ok){sc[taupe.id]=2}else agents.forEach(a=>sc[a.id]=2);
-    await new Promise(go=>{stage.innerHTML=`<div class="q">${ok?`${esc(taupe.nick)} sauve sa peau en trouvant le mot !`:`Les agents gagnent ! Le mot était « ${esc(word)} ».`}</div><button class="btn primary" id="nx">Suite</button>`;$('#nx').onclick=go})}
+  // Le vrai jeu La Taupe, ouvert par-dessus Paléo Party
+  const w=document.createElement('div');w.id='taupeapp';
+  w.innerHTML=`<div class="tabar"><b>🕶️ La Taupe</b><span>Jouez une manche, puis revenez ici pour les points.</span><button class="btn primary" id="taDone">Manche terminée ➜</button></div><iframe src="${TAUPE_URL}" title="La Taupe" allow="autoplay; fullscreen"></iframe>`;
+  document.body.appendChild(w);if(hymn)hymn.pause();
+  await new Promise(r=>$('#taDone').onclick=r);
+  w.remove();
+  const stage=mgOpen('La Taupe','🕶️',true);
+  const choose=(title,pool,extra)=>new Promise(r=>{stage.innerHTML=`<div class="q">${title}</div><div class="pickrow">${pool.map(p=>`<button class="pick" data-id="${p.id}" style="--pc:${p.color}">${avatarHTML(p,40)} ${esc(p.nick)}</button>`).join('')}${extra||''}</div>`;stage.querySelectorAll('.pick').forEach(b=>b.onclick=()=>r(b.dataset.id))});
+  const tid=await choose('Qui était la taupe ? 🕶️',players,'<button class="pick" data-id="" style="--pc:#666">↩ Pas de manche jouée</button>');
+  if(!tid){mgClose();return sc}
+  const taupe=players.find(p=>p.id===tid);
+  const res=await new Promise(r=>{stage.innerHTML=`<div class="q">Qui a gagné la manche ?</div><div class="trow"><button class="btn primary" id="tw">🕶️ La taupe ${esc(taupe.nick)}</button><button class="btn" id="aw">🕵️ Les agents</button></div>`;$('#tw').onclick=()=>r('t');$('#aw').onclick=()=>r('a')});
+  if(res==='t'){sc[taupe.id]=3;SFX.fanfare()}else{players.filter(p=>p!==taupe).forEach(p=>sc[p.id]=2);SFX.coin()}
   mgClose();return sc;
 }
 async function mgDefi(players,{duel,text}={}){
@@ -2100,7 +2093,7 @@ function rules(){
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
   <p><b>Pouvoirs</b> (une fois, puis rechargeables sur les cases 🔋 Borne de recharge ou avec certains mystères) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
-  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, 4 en duel, celui qui buzze répond à voix haute ; s'il se trompe, les autres marquent ; il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
+  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, 4 en duel, celui qui buzze répond à voix haute ; s'il se trompe, les autres marquent ; il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (on lance ton vrai jeu La Taupe pour une manche) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
   </div>`,choices:[{label:'Compris',value:1,cls:'primary'}]});
