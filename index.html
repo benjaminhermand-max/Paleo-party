@@ -1496,7 +1496,8 @@ async function clash(p){
 async function duel(p,forced){
   const opp=forced||await chooseTarget(p,'Duel ! Qui défies-tu ?',false);
   const bj=[p.id,opp.id].sort().join()==='benoit,jeje';
-  const game=pick(['quiz','reflexe','defi','shifumi','corde','chrono','plusmoins',...(navigator.onLine!==false?['blind']:[]),...(WHO.length>=3&&bj?['quiest']:[])]);
+  let game=pick(['quiz','reflexe','defi','shifumi','corde','chrono','plusmoins',...(navigator.onLine!==false?['blind']:[]),...(WHO.length>=3&&bj?['quiest']:[])]);
+  if(bj&&WHO.length>=3&&!S.bjDuel){game='quiest';S.bjDuel=true}
   await info(MG[game].i,`Duel : ${MG[game].n}`,`${esc(p.nick)} contre ${esc(opp.nick)}. Le gagnant pique 5 ${DUCK} au perdant.<br><small>${MG[game].d}</small>`,'#13a58e');
   const pl=[p,opp].sort((a,b)=>a.seat-b.seat);
   const sc=await RUN[game](pl,{duel:true});
