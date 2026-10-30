@@ -347,6 +347,16 @@ body.mgopen{background:#0b1020}
 @keyframes brar{50%{transform:translateX(9px)}}
 .vinyl{width:150px;height:150px;border-radius:50%;margin:8px auto;display:grid;place-items:center;font-size:44px;background:radial-gradient(circle,#ffd23f 0 18%,#111 19% 22%,#222 23% 30%,#111 31% 38%,#262626 39% 46%,#111 47%);box-shadow:0 0 30px rgba(255,210,63,.35)}
 .vinyl.spin{animation:spin 1.8s linear infinite}
+.stg{position:relative;width:min(560px,70vw);aspect-ratio:1.45;margin:6px auto;display:grid;place-items:end center;overflow:visible}
+.stg img{width:100%;height:100%;object-fit:contain;filter:brightness(.13) saturate(.2);transition:filter .08s}
+.stg .bm{position:absolute;bottom:42%;width:28%;height:150%;transform-origin:50% 100%;background:linear-gradient(to top,rgba(255,240,170,.75),rgba(255,210,63,0));clip-path:polygon(44% 100%,56% 100%,100% 0,0 0);opacity:0;pointer-events:none;mix-blend-mode:screen;filter:blur(2px)}
+.stg .b1{left:6%;transform:rotate(-24deg);background:linear-gradient(to top,rgba(255,79,216,.8),rgba(255,79,216,0))}.stg .b2{left:26%;transform:rotate(-8deg)}.stg .b3{left:46%;transform:rotate(8deg);background:linear-gradient(to top,rgba(127,232,255,.8),rgba(127,232,255,0))}.stg .b4{left:66%;transform:rotate(24deg)}
+.stg.on img{filter:brightness(1.18) saturate(1.25) drop-shadow(0 0 40px rgba(255,210,63,.8))}
+.stg.on .bm{opacity:1;animation:bmsw 1.2s ease-in-out infinite alternate}
+.stg.on .b1{animation-delay:-.3s}.stg.on .b3{animation-delay:-.6s}.stg.on .b4{animation-delay:-.9s}
+@keyframes bmsw{to{rotate:14deg}}
+.stg.on::after{content:'';position:absolute;inset:-20%;background:radial-gradient(circle at 50% 70%,rgba(255,255,255,.55),transparent 55%);animation:flash .5s ease-out forwards;pointer-events:none}
+@keyframes flash{to{opacity:0}}
 .bcd{font-size:80px;width:96px;text-align:center}
 .bres{display:flex;align-items:center;gap:14px;justify-content:center;font-size:22px;margin:8px 0}.bres img{width:96px;height:96px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.5)}.bres b{font-family:var(--display);font-weight:400;color:var(--duck);font-size:26px}
 .fsec{width:min(1000px,100%);margin:6px 0 -4px;font-family:var(--display);font-weight:400;color:var(--duck);text-align:left}
@@ -1582,7 +1592,7 @@ async function mgReflexe(players,{duel}={}){
   for(let r=0;r<3;r++){
     await new Promise(done=>{
       let phase='wait';const locked=new Set();
-      stage.innerHTML=`<div class="qnum">Manche ${r+1} / 3</div><div class="light" id="light"></div><div class="hint" id="hint">Attendez que la scène s'allume…</div>`;
+      stage.innerHTML=`<div class="qnum">Manche ${r+1} / 3</div><div class="stg" id="light"><img src="${DECO_ART.grande[0]}" alt="La Grande Scène"><i class="bm b1"></i><i class="bm b2"></i><i class="bm b3"></i><i class="bm b4"></i></div><div class="hint" id="hint">Attendez que la Grande Scène s'allume…</div>`;
       const light=$('#light'),hint=$('#hint');
       const tm=setTimeout(()=>{if(phase!=='wait')return;phase='go';light.classList.add('on');tone(1046,.25,'square',.08);hint.textContent='MAINTENANT !'},3500+rnd(5500));
       handler=async p=>{
