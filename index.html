@@ -601,7 +601,7 @@ const MG={
   interdit:{n:'Le mot interdit',i:'🤐',d:'Faites deviner un maximum de mots en 45 secondes sans dire les mots interdits.'},
   taupe:{n:'Taupe Aspirator',i:'🕳️',d:'Chacun sa zone : tapez les déchets qui sortent des trous, évitez les bouteilles (génépi, Ricard, Jack).'},
   corde:{n:'Tir à la corde',i:'🪢',d:'Face à face : tapotez votre zone pour tirer la corde de votre côté.',duelOnly:true},
-  chrono:{n:'Le chrono aveugle',i:'⏱️',d:'Buzzez quand vous pensez que 10 secondes se sont écoulées, sans voir le chrono.'},
+  chrono:{n:'Le chrono aveugle',i:'⏱️',d:'3 manches : 7, 10 et 13 secondes, dans le désordre. Buzzez quand vous pensez que le temps est écoulé, sans voir le chrono.'},
   quiest:{n:'Qui est-ce ? du crew',i:'🕵️',d:'Duel Benoît XVI contre Panoramix (Bizu connaît les réponses) : une photo floutée devient nette, le premier qui reconnaît la personne gagne.',need:()=>WHO.length>=3,duelOnly:true,pair:['benoit','jeje']},
   agent:{n:'La Taupe',i:'🕶️',need:()=>(!S||S.players.length>=3)&&navigator.onLine!==false,d:'On lance le vrai jeu La Taupe pour une manche. Ensuite, dites qui était la taupe et qui a gagné : 3 points pour la taupe si elle s\'en sort, sinon 2 points pour chaque agent.'},
   blind:{n:'Blind test',i:'🎧',d:'6 extraits d\'artistes passés au Paléo : 3 tubes et 3 morceaux moins connus. Buzzez dès que vous reconnaissez, puis donnez l\'artiste et le titre à voix haute.',need:()=>navigator.onLine!==false},
@@ -2050,20 +2050,23 @@ async function mgCorde(players){
 
 async function mgChrono(players){
   const stage=mgOpen('Le chrono aveugle','⏱️');
-  const sc=zero(players),times={};let t0=0,on=false;
+  const sc=zero(players);let times={},t0=0,on=false;
   const bz=makeBuzzers(players,p=>{if(!on||times[p.id]!=null)return;times[p.id]=(performance.now()-t0)/1000;bz.state(p.id,'on');bz.set(p.id,'✔️');SFX.step();if(players.every(q=>times[q.id]!=null))on=false},players.length===2);
-  players.forEach(p=>bz.set(p.id,'&nbsp;'));
-  await ready(stage,'Objectif : 10 secondes pile','Le chrono démarre puis disparaît au bout de 3 secondes. Buzzez quand vous pensez que 10 secondes se sont écoulées. Le plus proche gagne.');
-  stage.innerHTML=`<div class="count" id="cc">3</div>`;const cc=$('#cc');
-  for(const k of ['3','2','1']){cc.textContent=k;tone(523,.1,'square',.06);await sleep(700)}
-  tone(1046,.25,'square',.07);t0=performance.now();on=true;
-  while(on&&performance.now()-t0<20000){const e=(performance.now()-t0)/1000;cc.textContent=e<3?e.toFixed(1):'???';await sleep(50)}
-  on=false;
-  const rows=players.map(p=>({p,t:times[p.id],d:times[p.id]==null?99:Math.abs(times[p.id]-10)})).sort((x,y)=>x.d-y.d);
-  rows.forEach((r,i)=>{if(r.t!=null)sc[r.p.id]=players.length-i});
-  SFX.fanfare();
-  stage.innerHTML=`<div class="q">Résultats</div><div class="pickrow">${rows.map(r=>`<div class="sfrow" style="--pc:${r.p.color}"><div class="sfname">${avatarHTML(r.p,40)} ${esc(r.p.nick)}</div><div class="sfpts">${r.t==null?'—':r.t.toFixed(2)+' s'}</div></div>`).join('')}</div><button class="btn primary" id="cn">Suite ➜</button>`;
-  await new Promise(r=>$('#cn').onclick=r);
+  players.forEach(p=>bz.set(p.id,'0 pt'));
+  const targets=shuffle([7,10,13]);
+  for(let r=0;r<3;r++){const T=targets[r];times={};bz.clear();players.forEach(p=>bz.set(p.id,sc[p.id]+' pt'));
+    await ready(stage,`Manche ${r+1} / 3 · objectif : ${T} secondes pile`,'Le chrono démarre puis disparaît au bout de 3 secondes. Buzzez quand vous pensez que le temps est écoulé. Le plus proche marque le plus de points.');
+    stage.innerHTML=`<div class="qnum">Manche ${r+1} / 3 · objectif ${T} s</div><div class="count" id="cc">3</div>`;const cc=$('#cc');
+    for(const k of ['3','2','1']){cc.textContent=k;tone(523,.1,'square',.06);await sleep(700)}
+    tone(1046,.25,'square',.07);t0=performance.now();on=true;
+    while(on&&performance.now()-t0<(T+10)*1000){const e=(performance.now()-t0)/1000;cc.textContent=e<3?e.toFixed(1):'???';await sleep(50)}
+    on=false;
+    const rows=players.map(p=>({p,t:times[p.id],d:times[p.id]==null?99:Math.abs(times[p.id]-T)})).sort((x,y)=>x.d-y.d);
+    rows.forEach((x,k)=>{if(x.t!=null){x.pts=players.length-k;sc[x.p.id]+=x.pts}else x.pts=0});
+    players.forEach(p=>bz.set(p.id,sc[p.id]+' pt'));SFX.fanfare();
+    stage.innerHTML=`<div class="q">Manche ${r+1} · objectif ${T} s</div><div class="pickrow">${rows.map(x=>`<div class="sfrow" style="--pc:${x.p.color}"><div class="sfname">${avatarHTML(x.p,40)} ${esc(x.p.nick)}</div><div class="sfpts">${x.t==null?'—':x.t.toFixed(2)+' s'} · +${x.pts}</div></div>`).join('')}</div><button class="btn primary" id="cn">${r<2?'Manche suivante ➜':'Voir les résultats'}</button>`;
+    await new Promise(res=>$('#cn').onclick=res);
+  }
   mgClose();return sc;
 }
 
