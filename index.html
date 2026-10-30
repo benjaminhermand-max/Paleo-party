@@ -384,6 +384,8 @@ body.mgopen{background:#0b1020}
 .rlti.win{opacity:1;color:var(--duck);animation:pop .4s ease-out}
 .rltw{position:absolute;left:0;right:0;top:86px;height:86px;border-top:3px solid #ffd23f;border-bottom:3px solid #ffd23f;background:rgba(255,210,63,.08);pointer-events:none}
 .rlt::before,.rlt::after{content:'';position:absolute;left:0;right:0;height:60px;z-index:1;pointer-events:none}.rlt::before{top:0;background:linear-gradient(#0b1020,transparent)}.rlt::after{bottom:0;background:linear-gradient(transparent,#0b1020)}
+.btn.drinkbtn{font-size:clamp(24px,3.2vw,34px);padding:20px 30px;border-radius:20px;background:linear-gradient(#ffd23f,#f0a500);box-shadow:0 8px 0 #9a6400,0 0 30px rgba(255,210,63,.45);animation:pop .3s ease-out}
+.btn.drinkbtn:active{transform:translateY(6px);box-shadow:0 2px 0 #9a6400}
 .fsec{width:min(1000px,100%);margin:6px 0 -4px;font-family:var(--display);font-weight:400;color:var(--duck);text-align:left}
 .fcardg.irl{border-color:#b04ad6;background:linear-gradient(160deg,#2a1a48,var(--panel))}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:min(1000px,100%)}
@@ -1034,7 +1036,10 @@ window.addEventListener('resize',()=>{if(!boardBuilt||!S)return;const p=S.player
 /* ---------- Interface générique ---------- */
 function banner(text,color){const b=$('#banner');b.textContent=text;b.style.setProperty('--bc',color||'#fff');b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
 function toast(msg,color){const t=document.createElement('div');t.className='toast';t.style.setProperty('--tc',color||'var(--duck)');t.innerHTML=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),2700)}
-function ask({icon='',title='',body='',choices=[{label:'Continuer',value:true,cls:'primary'}],color,wide}={}){
+function ask({icon='',title='',body='',choices=[{label:'Continuer',value:true,cls:'primary'}],color,wide,plain}={}){
+  // Écran où quelqu'un doit boire : un seul gros bouton « C'est bu ! »
+  const txt=(title+' '+body).replace(/<[^>]*>/g,' ');
+  if(!plain&&choices.length===1&&/gorg|\bbois\b|\bboit\b|boivent|cul sec|\bshot\b|shooter|tournée/i.test(txt)&&!/pas de gorg|dispens/i.test(txt))choices=[{label:'🍻 C\'est bu !',value:choices[0].value,cls:'primary drinkbtn'}];
   return new Promise(res=>{
     const m=$('#modal');m.style.zIndex=$('#title').hidden?'':'80';
     m.innerHTML=`<div class="card${wide?' wide':''}" role="dialog" aria-modal="true" style="--cc:${color||'var(--duck)'}">${icon?`<div class="ic">${icon}</div>`:''}<h2>${title}</h2>${body?`<div class="body">${body}</div>`:''}<div class="choices"></div></div>`;
@@ -1072,13 +1077,13 @@ function nodeInfo(id){
   }
   if(n.t.startsWith('shop:')){
     const s=SHOPS[n.t.slice(5)];
-    return ask({icon:s.i,title:s.n,color:s.f,body:`<p>${s.d}</p><p><small>On peut acheter en passant devant ou en s'y arrêtant. Un achat par passage, 3 objets maximum dans le sac.</small></p><div class="itemlist">${s.items.map(k=>`<div class="irow">${itemIcon(k,64)}<div><b>${ITEMS[k].n} · ${ITEMS[k].c} ${DUCK}</b><br>${ITEMS[k].d}</div></div>`).join('')}</div>`,choices:[{label:'OK',value:1,cls:'primary'}]});
+    return ask({plain:true,icon:s.i,title:s.n,color:s.f,body:`<p>${s.d}</p><p><small>On peut acheter en passant devant ou en s'y arrêtant. Un achat par passage, 3 objets maximum dans le sac.</small></p><div class="itemlist">${s.items.map(k=>`<div class="irow">${itemIcon(k,64)}<div><b>${ITEMS[k].n} · ${ITEMS[k].c} ${DUCK}</b><br>${ITEMS[k].d}</div></div>`).join('')}</div>`,choices:[{label:'OK',value:1,cls:'primary'}]});
   }
   const t=TY[n.t];
   let extra='';
   if(BRANCH[id])extra=`<p><small>Carrefour : le joueur choisit sa route en passant ici.</small></p>`;
   if(PIPE[id]){highlight([PIPE[id]]);setTimeout(()=>highlight([]),2500);extra=`<p><small>L'autre tuyau clignote sur le plateau.</small></p>`}
-  return ask({icon:n.t==='aspirator'?RAKEI:n.t==='pipe'?'🟢':/^[+−?]|WC|VS/.test(t.i)?`<span style="font-family:var(--display);color:${t.f}">${t.i}</span>`:t.i,title:t.n+(n.label?` · ${esc(n.label)}`:''),color:t.f,body:`<p>${t.d}</p>${extra}`,choices:[{label:'OK',value:1,cls:'primary'}]});
+  return ask({plain:true,icon:n.t==='aspirator'?RAKEI:n.t==='pipe'?'🟢':/^[+−?]|WC|VS/.test(t.i)?`<span style="font-family:var(--display);color:${t.f}">${t.i}</span>`:t.i,title:t.n+(n.label?` · ${esc(n.label)}`:''),color:t.f,body:`<p>${t.d}</p>${extra}`,choices:[{label:'OK',value:1,cls:'primary'}]});
 }
 
 /* ---------- Déroulé d'une partie ---------- */
@@ -2160,7 +2165,7 @@ function rules(){
   <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, 4 en duel, celui qui buzze répond à voix haute ; s'il se trompe, les autres marquent ; il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (on lance ton vrai jeu La Taupe pour une manche) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
-  </div>`,choices:[{label:'Compris',value:1,cls:'primary'}]});
+  </div>`,plain:true,choices:[{label:'Compris',value:1,cls:'primary'}]});
 }
 
 /* ---------- Accueil ---------- */
@@ -2317,7 +2322,7 @@ async function start(fresh){
       ord.push(left[0]);S.order=ord;save()}
     const ord=S.order.map(i=>S.players[i]);
     {const last=ord[ord.length-1];SFX.drink();await info('🍺',`${esc(last.nick)} joue en dernier`,'Pour se consoler… une gorgée !',last.color)}
-    await ask({icon:'⛺',title:'Réveil au camping',body:`<p>Chacun part avec 5 ${DUCK}. Ordre de jeu :</p>${ord.map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0"><b>${i+1}.</b> ${avatarHTML(p,36)} <b style="color:${p.color}">${esc(p.nick)}</b></div>`).join('')}<p>🥃 Posez un shooter vide sur la table : à chaque 6 au dé, on y ajoute un ingrédient. Au bout de 3, le prochain qui fait un 6 le boit !</p><p><small>Touche une case du plateau à tout moment pour voir son effet.</small></p>`,choices:[{label:'Ouvrez les portes !',value:1,cls:'primary'}]});
+    await ask({plain:true,icon:'⛺',title:'Réveil au camping',body:`<p>Chacun part avec 5 ${DUCK}. Ordre de jeu :</p>${ord.map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0"><b>${i+1}.</b> ${avatarHTML(p,36)} <b style="color:${p.color}">${esc(p.nick)}</b></div>`).join('')}<p>🥃 Posez un shooter vide sur la table : à chaque 6 au dé, on y ajoute un ingrédient. Au bout de 3, le prochain qui fait un 6 le boit !</p><p><small>Touche une case du plateau à tout moment pour voir son effet.</small></p>`,choices:[{label:'Ouvrez les portes !',value:1,cls:'primary'}]});
     if(hymn)hymn.pause();
   }
   await gameLoop();
