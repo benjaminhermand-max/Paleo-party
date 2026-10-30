@@ -1185,7 +1185,18 @@ async function playTurn(p){
   if(overview){overview=false;renderHUD();await camOn(p,400)}
   let total=await rollDice(p,dice);
   if(p.id==='jeje'&&!p.powerUsed){
-    const v=await ask({icon:'🧙',title:`Tu as fait ${total}`,body:'Panoramix peut sortir la potion de génépi : tu relances, et les deux autres boivent une gorgée.',color:p.color,choices:[{label:`Avancer de ${total}`,value:'go',cls:'primary'},{label:'🧪 Potion de génépi',value:'pot'}]});
+    let v;
+    while(true){
+      v=await ask({icon:'🧙',title:`Tu as fait ${total}`,body:'Panoramix peut sortir la potion de génépi : tu relances, et les deux autres boivent une gorgée.',color:p.color,choices:[{label:`Avancer de ${total}`,value:'go',cls:'primary'},{label:'🧪 Potion de génépi',value:'pot'},{label:'🗺️ Voir la carte',value:'map',cls:'ghost'}]});
+      if(v!=='map')break;
+      const BC=['#ffd23f','#7fe8ff'],firsts=optsOf(p.pos,p.prev),marks=[];
+      firsts.forEach((id,k)=>landingFrom(id,total,p.pos).forEach(e=>marks.push({id:e,color:BC[k%2],tag:'Arrivée'})));
+      highlight(marks);
+      const cur=N[p.pos],pts=[cur,...marks.map(m=>N[m.id])],x0=Math.min(...pts.map(q=>q.x)),x1=Math.max(...pts.map(q=>q.x)),y0=Math.min(...pts.map(q=>q.y)),y1=Math.max(...pts.map(q=>q.y));
+      await camGo(viewFor((x0+x1)/2,(y0+y1)/2,Math.max(900,(x1-x0)+360,((y1-y0)+300)/aspect())),600);
+      await actionBar(p,[{label:'↩️ Revenir au choix',value:1,cls:'primary'}],`<b style="color:${p.color}">${esc(p.nick)}</b> regarde la carte : ${marks.length>1?'les cases qui brillent montrent où tu peux arriver':'la case qui brille montre où tu arrives'} avec ${total}.`);
+      highlight([]);await camOn(p,450);
+    }
     if(v==='pot'){p.powerUsed=true;SFX.drink();toast('🧪 Les deux autres boivent 1 gorgée',p.color);renderHUD();total=await rollDice(p,dice)}
   }
   await moveSteps(p,total);
