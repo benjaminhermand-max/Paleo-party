@@ -1590,6 +1590,7 @@ async function mgReflexe(players,{duel}={}){
   players.forEach(p=>bz.set(p.id,'0 pt'));
   await ready(stage,'3 manches',players.length===2?`Face à face : <b style="color:${players[0].color}">${esc(players[0].nick)}</b> à gauche, <b style="color:${players[1].color}">${esc(players[1].nick)}</b> à droite. Buzzez dès que la scène s'allume, pas avant.`:'Gardez le doigt au-dessus de votre zone. Buzzez dès que la scène s\'allume, pas avant.');
   for(let r=0;r<3;r++){
+    if(r>0){handler=null;await ready(stage,`Manche ${r+1} / 3`,'Gardez le doigt au-dessus de votre zone. Buzzez dès que la Grande Scène s\'allume, pas avant.')}
     await new Promise(done=>{
       let phase='wait';const locked=new Set();
       stage.innerHTML=`<div class="qnum">Manche ${r+1} / 3</div><div class="stg" id="light"><img src="${DECO_ART.grande[0]}" alt="La Grande Scène"><i class="bm b1"></i><i class="bm b2"></i><i class="bm b3"></i><i class="bm b4"></i></div><div class="hint" id="hint">Attendez que la Grande Scène s'allume…</div>`;
