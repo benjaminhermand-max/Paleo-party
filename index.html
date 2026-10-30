@@ -1822,7 +1822,7 @@ async function mgAgent(players,{duel}={}){
 async function mgDefi(players,{duel,text}={}){
   const stage=mgOpen('Défi IRL','🎤',true);
   let d=text||nextDefi();
-  if(duel||players.length<3)for(let k=0;k<12&&/mime|La Taupe/i.test(d);k++)d=nextDefi();if(/mime/i.test(d)){mgClose();return mgMime(players,{duel})}if(/La Taupe/.test(d)&&players.length>=3){mgClose();return mgAgent(players,{duel})}if(/La Taupe/.test(d))d=nextDefi();const sc=zero(players);
+  if(duel||players.length<3)for(let k=0;k<20&&/mime|La Taupe|vodka/i.test(d);k++)d=nextDefi();if(/mime/i.test(d)){mgClose();return mgMime(players,{duel})}if(/La Taupe/.test(d)&&players.length>=3){mgClose();return mgAgent(players,{duel})}if(/La Taupe/.test(d))d=nextDefi();const sc=zero(players);
   stage.innerHTML=`<div class="defi">${esc(d)}</div><div class="timer" id="tmr"></div><div class="trow"><button class="btn" id="t30">⏱ Lancer 30 s</button><button class="btn primary" id="judge">Désigner le gagnant</button></div>`;
   let stop=false;
   $('#t30').onclick=async()=>{const b=$('#t30');b.disabled=true;const end=Date.now()+30000;while(Date.now()<end&&!stop){await sleep(200);const t=$('#tmr');if(t)t.textContent=Math.ceil((end-Date.now())/1000)+' s'}if(!stop){SFX.buzz();const t=$('#tmr');if(t)t.textContent='Temps écoulé !'}};
