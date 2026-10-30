@@ -417,6 +417,10 @@ function unstore(k){try{localStorage.removeItem(k)}catch(e){}}
 
 /* ---------- Sons ---------- */
 let AC=null, muted=load('paleo-muted')||false, hymn=null;
+/* Hymne Aspirator : joue sur les menus dès le premier toucher (les navigateurs bloquent le son avant) */
+try{hymn=new Audio('hymne.mp3');hymn.loop=true;hymn.volume=.6;hymn.preload='auto'}catch(e){hymn=null}
+const hymnMenu=()=>{if(!hymn||muted)return;const t=document.querySelector('#title');if(t&&!t.hidden&&!document.querySelector('#halfvid')){hymn.volume=.6;if(hymn.paused)hymn.play().catch(()=>{})}};
+document.addEventListener('pointerdown',()=>setTimeout(hymnMenu,30),{capture:true,passive:true});
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
 function tone(f,d=.12,type='square',vol=.07,delay=0){const a=ac();if(!a||muted)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;const t=a.currentTime+delay;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.03)}
 const SFX={
@@ -691,7 +695,7 @@ function renderHUD(){
   }
   h+=`<div class="tools"><button class="iconbtn${overview?' on':''}" id="bMap" aria-label="Vue d'ensemble">🗺️</button><button class="iconbtn" id="bSound" aria-label="Son">${muted?'🔇':'🔊'}</button><button class="iconbtn" id="bMenu" aria-label="Menu" style="grid-column:span 2">☰</button></div>`;
   $('#hud').innerHTML=h;
-  $('#bSound').onclick=()=>{muted=!muted;store('paleo-muted',muted);renderHUD()};
+  $('#bSound').onclick=()=>{muted=!muted;store('paleo-muted',muted);if(muted&&hymn)hymn.pause();renderHUD()};
   $('#bMenu').onclick=menu;
   $('#bMap').onclick=()=>{overview=!overview;renderHUD();if(overview)camAll(600);else{const p=S.players.find(x=>x.id===S.cur);if(p)camOn(p,600)}};
 }
@@ -1444,6 +1448,7 @@ async function endRoundGame(){
 async function finale(){
   S.phase='end';unstore('paleo-save');
   await playVid(CREW_VID,'Fin du festival !',4.5);
+  if(hymn&&!muted){hymn.currentTime=0;hymn.volume=.6;hymn.play().catch(()=>{})}
   const rows=S.players.map(p=>{const bon=p.bracelets.length*BR_VAL+(p.bracelets.length===6?BR_BONUS:0);return{p,bon,tot:p.ducks+bon}}).sort((a,b)=>b.tot-a.tot);
   SFX.fanfare();setTimeout(SFX.fanfare,700);
   const t=$('#title');t.hidden=false;
@@ -2121,8 +2126,9 @@ function titleScreen(view){
       ${MEM.length?'<button class="filebtn" id="memClr">Retirer mes ajouts</button>':''}</div>
       <p class="tag" style="font-size:14px">Le Memory tire 12 photos au hasard à chaque partie.</p>
       <h3>🎵 Hymne Aspirator</h3>
-      <div class="trow"><label class="filebtn">Charger l'hymne<input type="file" accept="audio/*" id="hymnIn" hidden></label>
-      <button class="filebtn" id="hymnBtn" ${hymn?'':'hidden'}>${hymn&&!hymn.paused?'⏸ Pause':'▶ Lecture'}</button></div>
+      <p class="tag" style="font-size:14px">L'hymne « Paléo 2K26 » joue sur les menus. Tu peux le remplacer pour cette tablette.</p>
+      <div class="trow"><label class="filebtn">Charger un autre hymne<input type="file" accept="audio/*" id="hymnIn" hidden></label>
+      <button class="filebtn" id="hymnBtn">${hymn&&!hymn.paused?'⏸ Pause':'▶ Lecture'}</button></div>
     </div>`+foot('Personnalisez le jeu.',1);
   }else{
     const fake=DEF.map((d,i)=>({...d,avatar:AV[i]}));
@@ -2172,6 +2178,7 @@ function freeMode(reset){
   $('#fRst').onclick=()=>freeMode(true);
 }
 async function freePlay(g){
+  if(hymn)hymn.pause();
   const m=MG[g];let pl=[...S.players].sort((a,b)=>a.seat-b.seat);
   $('#title').hidden=true;
   if(m.duelOnly){
@@ -2193,7 +2200,7 @@ async function freePlay(g){
 }
 async function start(fresh){
   trapBack();
-  if(hymn)hymn.volume=.25;
+  if(hymn)hymn.pause();
   $('#title').hidden=true;$('#title').innerHTML='';
   try{if(navigator.wakeLock)navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}
   if(S.mods)for(const k in S.mods)if(N[k])N[k].t=S.mods[k];

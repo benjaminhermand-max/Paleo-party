@@ -1,6 +1,6 @@
 // Garde le jeu en cache pour qu'il s'ouvre même sans connexion.
-const CACHE='paleo-party-v2';
-const FILES=['./','./index.html','./manifest.webmanifest','./icones/icon192.png','./icones/icon512.png'];
+const CACHE='paleo-party-v3';
+const FILES=['./','./index.html','./manifest.webmanifest','./icones/icon192.png','./icones/icon512.png','./hymne.mp3'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 self.addEventListener('fetch',e=>{
