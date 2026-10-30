@@ -92,7 +92,9 @@ button:focus-visible{outline:3px solid var(--duck);outline-offset:2px}
 
 /* Plateau */
 #boardWrap{min-height:0;position:relative;border-radius:18px;overflow:hidden;background:#071510}
-#world{position:absolute;left:0;top:0;width:2980px;height:1520px;transform-origin:0 0}
+#world{position:absolute;left:0;top:0;width:2980px;height:1520px;transform-origin:0 0;backface-visibility:hidden}
+#world.moving{will-change:transform}
+#world.moving .hlc,#world.moving .ring{animation-play-state:paused}
 #world>svg{position:absolute;left:0;top:0;display:block;width:2980px;height:1520px}
 #fxb,#fx{position:absolute;inset:0;pointer-events:none}
 .node{cursor:pointer}
@@ -958,10 +960,21 @@ function viewFor(cx,cy,w){
   let y=Math.max(WORLD.y,Math.min(WORLD.y+WORLD.h-h,cy-h/2));
   return{x,y,w,h};
 }
-function setVB(c,dur=0){
-  cam=c;const W=$('#boardWrap').getBoundingClientRect().width||1,k=W/c.w,el=$('#world');
+/* Caméra : une seule écriture par image, calque GPU pendant les mouvements */
+let wrapW=0,camRaf=0,camPending=null,camIdle=0;
+function wrapWidth(){if(!wrapW){const b=document.getElementById('boardWrap');wrapW=b?b.getBoundingClientRect().width:0}return wrapW||1}
+window.addEventListener('resize',()=>{wrapW=0});
+function camMoving(ms){const el=document.getElementById('world');if(!el)return;el.classList.add('moving');clearTimeout(camIdle);camIdle=setTimeout(()=>el.classList.remove('moving'),ms)}
+function applyCam(c,dur){
+  const k=wrapWidth()/c.w,el=document.getElementById('world');if(!el)return;
   el.style.transition=dur>0&&!REDUCED?`transform ${dur}ms cubic-bezier(.45,.05,.35,1)`:'none';
-  el.style.transform=`translate(${(-(c.x-WORLD.x)*k).toFixed(1)}px,${(-(c.y-WORLD.y)*k).toFixed(1)}px) scale(${k.toFixed(4)})`;
+  el.style.transform=`translate3d(${(-(c.x-WORLD.x)*k).toFixed(1)}px,${(-(c.y-WORLD.y)*k).toFixed(1)}px,0) scale(${k.toFixed(4)})`;
+}
+function setVB(c,dur=0){
+  cam=c;
+  if(dur>0){if(camRaf){cancelAnimationFrame(camRaf);camRaf=0;camPending=null}camMoving(dur+200);applyCam(c,dur);return}
+  camMoving(220);camPending=c;
+  if(!camRaf)camRaf=requestAnimationFrame(()=>{camRaf=0;if(camPending)applyCam(camPending,0);camPending=null});
 }
 function camGo(t,dur=500){setVB(t,dur);return dur>0&&!REDUCED?sleep(dur):Promise.resolve()}
 function camOn(p,dur=450,w=ZOOM){if(overview)return Promise.resolve();const n=N[p.pos];return camGo(viewFor(n.x,n.y-40,w),dur)}
@@ -974,8 +987,9 @@ function clampView(x,y,w){
   return{x,y,w,h};
 }
 (function(){
-  const wrap=$('#boardWrap'),pts=new Map();let g=null,moved=false;
-  const rect=()=>wrap.getBoundingClientRect();
+  const wrap=$('#boardWrap'),pts=new Map();let g=null,moved=false,rc=null,vel={x:0,y:0,t:0},inert=0;
+  const rect=()=>rc||(rc=wrap.getBoundingClientRect());
+  window.addEventListener('resize',()=>{rc=null});
   function begin(){
     const r=rect(),v=[...pts.values()];
     if(v.length===1)g={mode:'pan',x:v[0].x,y:v[0].y,cam:{...cam}};
@@ -983,17 +997,23 @@ function clampView(x,y,w){
       g={mode:'pinch',d:Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)||1,cam:{...cam},wx:cam.x+(mx-r.left)/r.width*cam.w,wy:cam.y+(my-r.top)/r.height*cam.h}}
     else g=null;
   }
-  wrap.addEventListener('pointerdown',e=>{if(!boardBuilt)return;if(e.isPrimary)pts.clear();pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===1)moved=false;begin()});
+  wrap.addEventListener('pointerdown',e=>{if(!boardBuilt)return;cancelAnimationFrame(inert);rc=null;vel={x:0,y:0,t:performance.now()};if(e.isPrimary)pts.clear();pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===1)moved=false;begin()});
   wrap.addEventListener('pointermove',e=>{
     if(!g||!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     const r=rect(),v=[...pts.values()];
     if(g.mode==='pan'&&v.length===1){const dx=v[0].x-g.x,dy=v[0].y-g.y;if(!moved&&Math.hypot(dx,dy)<10)return;moved=true;
-      setVB(clampView(g.cam.x-dx/r.width*g.cam.w,g.cam.y-dy/r.height*g.cam.h,g.cam.w),0)}
+      const now=performance.now(),dt=Math.max(1,now-vel.t);const nx=g.cam.x-dx/r.width*g.cam.w,ny=g.cam.y-dy/r.height*g.cam.h;
+      vel={x:.8*((nx-cam.x)/dt)+.2*vel.x,y:.8*((ny-cam.y)/dt)+.2*vel.y,t:now};
+      setVB(clampView(nx,ny,g.cam.w),0)}
     else if(g.mode==='pinch'&&v.length>=2){moved=true;const d=Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)||1,mx=(v[0].x+v[1].x)/2,my=(v[0].y+v[1].y)/2;
       const w=Math.max(480,Math.min(fullView().w,g.cam.w*g.d/d)),h=w*aspect();
       setVB(clampView(g.wx-(mx-r.left)/r.width*w,g.wy-(my-r.top)/r.height*h,w),0)}
   });
-  const end=e=>{pts.delete(e.pointerId);begin()};
+  const end=e=>{const wasPan=g&&g.mode==='pan'&&moved&&pts.size===1;pts.delete(e.pointerId);begin();
+    // Inertie : le plateau continue de glisser un peu après le lâcher
+    if(wasPan&&performance.now()-vel.t<80&&Math.hypot(vel.x,vel.y)>.05){let vx=vel.x,vy=vel.y,lt=performance.now();
+      const step=t=>{const dt=t-lt;lt=t;vx*=Math.pow(.92,dt/16);vy*=Math.pow(.92,dt/16);if(Math.hypot(vx,vy)<.02)return;
+        const c=clampView(cam.x+vx*dt,cam.y+vy*dt,cam.w);setVB(c,0);inert=requestAnimationFrame(step)};inert=requestAnimationFrame(step)}};
   wrap.addEventListener('pointerup',end);wrap.addEventListener('pointercancel',end);wrap.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')end(e)});
   wrap.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
   wrap.addEventListener('wheel',e=>{e.preventDefault();const r=rect(),wx=cam.x+(e.clientX-r.left)/r.width*cam.w,wy=cam.y+(e.clientY-r.top)/r.height*cam.h;
