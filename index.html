@@ -722,7 +722,7 @@ function playerDetail(p){
 function renderHUD(){
   if(!S)return;
   const last=S.round===S.maxRound;
-  let h=`<div class="round${last?' last':''}"><small>${last?'Dernier tour':'Tour'}</small><b>${Math.min(S.round,S.maxRound)}/${S.maxRound}</b></div>`;
+  let h=`<div class="round${last?' last':''}"><small>${last?'Dernier tour':'Tour'}</small><b>${Math.min(S.round,S.maxRound)}/${S.maxRound}</b>${S.shooter?`<small title="Ingrédients dans le shooter de la honte">🥃 ${S.shooter}</small>`:''}</div>`;
   const rk=ranks();
   for(const p of S.players){
     const brs=SCENE_ORDER.map(k=>`<img class="brimg${p.bracelets.includes(k)?' on':''}" id="br-${p.id}-${k}" src="${BR_ART[k][0]}" alt="${SC[k].name}" title="${SC[k].name}">`).join('');
@@ -1187,7 +1187,7 @@ async function rollDice(p,count){
   d.querySelector('.dtotal').textContent=count>1?`${vals.join(' + ')} = ${tot}`:`${tot}`;
   await sleep(1000);d.hidden=true;
   const six=max===6?vals.filter(v=>v===6).length:0;
-  if(six){SFX.drink();await ask({icon:'🎲',title:'Règle du 6 !',color:'#ffd23f',body:`<p>${esc(p.nick)} a fait ${six>1?six+' fois 6':'un 6'} : distribue <b>${6*six} gorgées</b> aux autres joueurs.</p>`,choices:[{label:'C\'est distribué',value:1,cls:'primary'}]})}
+  if(six){SFX.drink();S.shooter=(S.shooter||0)+six;save();await ask({icon:'🥃',title:'Règle du 6 !',color:'#ffd23f',body:`<p>${esc(p.nick)} a fait ${six>1?six+' fois 6':'un 6'} : ajoute <b>${six>1?six+' ingrédients':'un ingrédient'}</b> de ton choix dans le shooter de la honte.</p><p>Il contient maintenant <b>${S.shooter} ingrédient${S.shooter>1?'s':''}</b>. À la fin de la partie, le 3e devra le boire !</p>`,choices:[{label:'C\'est versé',value:1,cls:'primary'}]})}
   return tot;
 }
 
@@ -1490,6 +1490,7 @@ async function finale(){
   await playVid(CREW_VID,'Fin du festival !',4.5);
   if(hymn&&!muted){hymn.currentTime=0;hymn.volume=.6;hymn.play().catch(()=>{})}
   const rows=S.players.map(p=>{const bon=p.bracelets.length*BR_VAL+(p.bracelets.length===6?BR_BONUS:0);return{p,bon,tot:p.ducks+bon}}).sort((a,b)=>b.tot-a.tot);
+  if(S.shooter&&rows[2]){const l=rows[2].p;SFX.drink();await info('🥃',`Le shooter de la honte pour ${esc(l.nick)} !`,`${esc(l.nick)} termine 3e et doit boire le shooter : <b>${S.shooter} ingrédient${S.shooter>1?'s':''}</b> ajouté${S.shooter>1?'s':''} pendant la partie. Cul sec !`,l.color)}
   SFX.fanfare();setTimeout(SFX.fanfare,700);
   const t=$('#title');t.hidden=false;
   t.innerHTML=`<div class="tin"><img class="tlogo sm" src="${LOGO}" alt="Logo Team Padre"><div class="logo">Fin du festival<span>Les lumières se rallument</span></div>
@@ -2092,7 +2093,7 @@ function rules(){
   return ask({icon:'📖',title:'Les règles',wide:true,body:`<div class="rules">
   <p><b>But :</b> finir le festival avec le plus de canards ${DUCK}. En fin de partie, chaque bracelet de scène vaut ${BR_VAL} canards, et les 6 bracelets rapportent ${BR_BONUS} canards de bonus.</p>
   <p><b>Les bracelets s'achètent</b> en passant devant une scène, en canards et en gorgées : La Ruche 6 + 1, Le Dôme 7 + 2, Club Tent 8 + 2, Belleville 8 + 2, Véga 11 + 3, Grande Scène 13 + 3. S'arrêter pile dessus fait 3 canards de réduction.</p>
-  <p><b>Un tour :</b> chacun lance le dé et avance. Après les trois joueurs, mini-jeu pour tout le monde (1er +6, 2e +3).</p><p><b>Roue de la fortune 🎡</b> (entre Véga et Belleville, et juste avant la Banque No Cash) : elle tourne deux fois. D'abord elle choisit un de tes deux adversaires, puis ce qui se passe avec lui : lui voler un bracelet ou des canards, échanger vos canards… ou lui donner un bracelet.</p><p><b>Mi-parcours :</b> les cases bleues passent à +5 et les rouges à −5. à la moitié de la partie, « C'est déjà bientôt la fin du festival ! » : 5 cases bleues deviennent rouges et 2 cases râteau deviennent des têtes de mort. Toutes les têtes de mort deviennent alors des shots préparés par les adversaires.</p><p><b>Têtes de mort :</b> la noire, c'est cul sec ; la violette, c'est un shot surprise préparé par les adversaires.</p><p><b>Règle du 6 :</b> chaque 6 sorti au dé permet de distribuer 6 gorgées.</p>
+  <p><b>Règle du 6 🥃 :</b> chaque 6 au dé, le joueur ajoute un ingrédient de son choix dans un shooter vide posé sur la table. À la fin de la partie, le 3e le boit cul sec.</p><p><b>Un tour :</b> chacun lance le dé et avance. Après les trois joueurs, mini-jeu pour tout le monde (1er +6, 2e +3).</p><p><b>Roue de la fortune 🎡</b> (entre Véga et Belleville, et juste avant la Banque No Cash) : elle tourne deux fois. D'abord elle choisit un de tes deux adversaires, puis ce qui se passe avec lui : lui voler un bracelet ou des canards, échanger vos canards… ou lui donner un bracelet.</p><p><b>Mi-parcours :</b> les cases bleues passent à +5 et les rouges à −5. à la moitié de la partie, « C'est déjà bientôt la fin du festival ! » : 5 cases bleues deviennent rouges et 2 cases râteau deviennent des têtes de mort. Toutes les têtes de mort deviennent alors des shots préparés par les adversaires.</p><p><b>Têtes de mort :</b> la noire, c'est cul sec ; la violette, c'est un shot surprise préparé par les adversaires.</p><p><b>Règle du 6 :</b> chaque 6 sorti au dé permet de distribuer 6 gorgées.</p>
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
   <p><b>Pouvoirs</b> (une fois par partie) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
@@ -2256,7 +2257,7 @@ async function start(fresh){
       ord.push(left[0]);S.order=ord;save()}
     const ord=S.order.map(i=>S.players[i]);
     {const last=ord[ord.length-1];SFX.drink();await info('🍺',`${esc(last.nick)} joue en dernier`,'Pour se consoler… une gorgée !',last.color)}
-    await ask({icon:'⛺',title:'Réveil au camping',body:`<p>Chacun part avec 5 ${DUCK}. Ordre de jeu :</p>${ord.map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0"><b>${i+1}.</b> ${avatarHTML(p,36)} <b style="color:${p.color}">${esc(p.nick)}</b></div>`).join('')}<p><small>Touche une case du plateau à tout moment pour voir son effet.</small></p>`,choices:[{label:'Ouvrez les portes !',value:1,cls:'primary'}]});
+    await ask({icon:'⛺',title:'Réveil au camping',body:`<p>Chacun part avec 5 ${DUCK}. Ordre de jeu :</p>${ord.map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0"><b>${i+1}.</b> ${avatarHTML(p,36)} <b style="color:${p.color}">${esc(p.nick)}</b></div>`).join('')}<p>🥃 Posez un shooter vide sur la table : à chaque 6 au dé, on y ajoute un ingrédient. Le 3e le boira à la fin !</p><p><small>Touche une case du plateau à tout moment pour voir son effet.</small></p>`,choices:[{label:'Ouvrez les portes !',value:1,cls:'primary'}]});
     if(hymn)hymn.pause();
   }
   await gameLoop();
