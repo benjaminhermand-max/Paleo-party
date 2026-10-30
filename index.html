@@ -484,6 +484,7 @@ const SHOPS={
 const TY={
   blue:{f:'#2f6bff',i:'+3',n:'Canard bleu',d:'+3 canards.'},
   red:{f:'#e23b4e',i:'−3',n:'Canard rouge',d:'−3 canards. Le bracelet VIP t\'en protège.'},
+  recharge:{f:'#18c29c',i:'🔋',n:'Borne de recharge',d:'Ton pouvoir se recharge : tu pourras l\'utiliser à nouveau. S\'il est encore disponible, tu gagnes 3 canards.'},
   roue:{f:'#ff6a3d',i:'🎡',n:'Roue de la fortune',d:'La roue tourne deux fois : elle choisit un de tes adversaires, puis ce qui se passe avec lui (voler un bracelet ou des canards, échanger, donner…).'},
   boire:{f:'#d98a1c',i:'🍺',n:'Gorgées',d:'Bois 1 à 3 gorgées. Un passage au point d\'eau t\'en dispense une fois.'},
   distrib:{f:'#b8610f',i:'🍻',n:'Tournée',d:'Distribue 2 à 4 gorgées aux autres joueurs.'},
@@ -536,11 +537,11 @@ const CHAINS=[
   ['ja','ruche',[[430,1160],[250,1060]],['red','pipe','aspirator','mystere','red']],
   ['ruche','dome',[[170,640],[220,440]],['eau','red','shot','secu']],
   ['dome','jb',[[470,300],[520,200]],['blue','lucky']],
-  ['jb','sph',[[820,110]],['boire','wc','blue','mystere']],
+  ['jb','sph',[[820,110]],['boire','wc','recharge','mystere']],
   ['sph','vega',[],['blue']],
   ['vega','belle',[[1640,170],[1830,380]],['pipe','distrib','shop:bar','red','roue']],
   ['belle','ent',[[1980,760],[1930,950]],['blue','culsec','retour','boire','red']],
-  ['ja','hub',[[760,880]],['mystere','blue','red','distrib']],
+  ['ja','hub',[[760,880]],['mystere','recharge','red','distrib']],
   ['jb','hub',[[620,400],[800,560]],['blue','boire','aspirator','roue','shop:banque']],
   ['hub','sph',[[1060,420]],['blue','secu','lucky']],
   ['hub','belle',[[1400,690]],['blue','duel','infirmerie','objet','red','scene:belleville']],
@@ -577,9 +578,9 @@ const PIPE={'ja-ruche-1':'vega-belle-0','vega-belle-0':'ja-ruche-1'};
 const SCENE_NODE={club:'club',grande:'grande',ruche:'ruche',dome:'dome',vega:'vega',belleville:'hub-belle-5'};
 
 const DEF=[
-  {id:'bizu',name:'Benjamin',nick:'Bizu',color:'#ff8a3d',emoji:'🎲',power:'Le créateur',pdesc:'Une fois par partie, choisis le mini-jeu de fin de tour. Si tu le gagnes, ta récompense est doublée.'},
-  {id:'benoit',name:'Benoît',nick:'Benoît XVI',color:'#f0dfb4',emoji:'👑',power:'Passe bénévole',pdesc:'Une fois par partie, le taulier file directement à la prochaine scène dont il n\'a pas le bracelet, et y entre sans payer de canards.'},
-  {id:'jeje',name:'Jéjé',nick:'Panoramix',color:'#7bd34a',emoji:'🧙',power:'Potion de génépi',pdesc:'Une fois par partie, après ton lancer, relance le dé. Les deux autres boivent une gorgée.'},
+  {id:'bizu',name:'Benjamin',nick:'Bizu',color:'#ff8a3d',emoji:'🎲',power:'Le créateur',pdesc:'Une fois (rechargeable aux bornes 🔋), choisis le mini-jeu de fin de tour. Si tu le gagnes, ta récompense est doublée.'},
+  {id:'benoit',name:'Benoît',nick:'Benoît XVI',color:'#f0dfb4',emoji:'👑',power:'Passe bénévole',pdesc:'Une fois (rechargeable aux bornes 🔋), le taulier file directement à la prochaine scène dont il n\'a pas le bracelet, et peut y acheter le bracelet (avec la réduction de 3 canards).'},
+  {id:'jeje',name:'Jéjé',nick:'Panoramix',color:'#7bd34a',emoji:'🧙',power:'Potion de génépi',pdesc:'Une fois (rechargeable aux bornes 🔋), après ton lancer, relance le dé. Les deux autres boivent une gorgée.'},
 ];
 const mgOK=k=>!MG[k].duelOnly&&!MG[k].irl&&(!MG[k].need||MG[k].need());
 const MG={
@@ -646,6 +647,7 @@ const DEFIS=[
 ];
 const MYST=[
   {i:'⛈️',t:'Orage sur l\'Asse',x:'Tout le monde perd 3 canards (sauf bracelet VIP).',f:async()=>{for(const o of S.players){if(o.vip){o.vip=false;toast(`🎫 ${o.nick} est protégé`)}else lose(o,3,true)}renderHUD()}},
+  {i:'🔋',t:'Batterie externe',x:'Un festivalier te prête sa batterie : ton pouvoir se recharge. S\'il était encore disponible, +3 canards.',f:async p=>{if(p.powerUsed){p.powerUsed=false;renderHUD();toast(`🔋 Pouvoir de ${esc(p.nick)} rechargé`,p.color)}else gain(p,3)}},
   {i:'🧙',t:'La tournée du druide',x:'Panoramix sort le génépi maison : tout le monde boit 1 gorgée, et Panoramix en distribue 2 de plus.',f:async()=>SFX.drink()},
   {i:'👛',t:'Objet trouvé',x:'Tu rapportes un portefeuille aux objets trouvés. Le karma te récompense : +5 canards.',f:async p=>gain(p,5)},
   {i:'🤏',t:'Pickpocket au Village du Monde',x:'Tu perds 4 canards, qui partent chez le joueur le plus pauvre.',f:async p=>{const poor=others(p).sort((a,b)=>a.ducks-b.ducks)[0];if(p.vip){p.vip=false;toast('🎫 Le VIP te protège');return}const v=lose(p,4);if(v)gain(poor,v)}},
@@ -1259,6 +1261,7 @@ async function land(p){
   switch(t){
     case 'blue':await info(DUCK,'Canard bleu',`+${BV()} ${DUCK} pour ${esc(p.nick)}.`,'#2f6bff');gain(p,BV());break;
     case 'roue':await wheel(p);break;
+    case 'recharge':if(p.powerUsed){p.powerUsed=false;renderHUD();SFX.fanfare();await info('🔋','Borne de recharge',`Le pouvoir de ${esc(p.nick)} est rechargé : « ${esc(def(p).power)} » est de nouveau disponible !`,p.color)}else{gain(p,3);await info('🔋','Borne de recharge',`Ton pouvoir est déjà chargé : +3 ${DUCK} à la place.`,p.color)}break;
     case 'red':
       if(p.vip){p.vip=false;renderHUD();await info('🎫','Case rouge… mais VIP !','Ton bracelet VIP t\'évite la perte. Il est maintenant utilisé.','#e23b4e')}
       else{await info('💸','Canard rouge',`${esc(p.nick)} perd ${BV()} ${DUCK}.`,'#e23b4e');lose(p,BV())}
@@ -1432,10 +1435,10 @@ async function usePower(p){
     const id=nearestMissing(p);
     if(id==null){await info('👑','Rien à gagner','Tu as déjà tous les bracelets, garde ton passe pour plus tard.',p.color);return null}
     const s=SC[N[id].t.slice(6)];
-    const ok=await ask({icon:'👑',title:'Passe bénévole',body:`Benoît XVI file directement à ${s.name} et entre sans payer de canards (les gorgées restent dues). Ton tour s'arrête là.`,color:p.color,choices:[{label:'Y aller',value:true,cls:'primary'},{label:'Annuler',value:false,cls:'ghost'}]});
+    const ok=await ask({icon:'👑',title:'Passe bénévole',body:`Benoît XVI file directement à ${s.name} et peut y acheter le bracelet, avec la réduction de 3 canards. Ton tour s'arrête là.`,color:p.color,choices:[{label:'Y aller',value:true,cls:'primary'},{label:'Annuler',value:false,cls:'ghost'}]});
     if(!ok)return null;
     p.powerUsed=true;p.pos=id;p.prev=null;renderTokens();await camOn(p,600);
-    await passScene(p,N[id],{landing:true,free:true});return 'end';
+    await passScene(p,N[id],{landing:true});return 'end';
   }
   return null;
 }
@@ -2096,7 +2099,7 @@ function rules(){
   <p><b>Règle du 6 🥃 :</b> chaque 6 au dé, le joueur ajoute un ingrédient de son choix dans un shooter vide posé sur la table. À la fin de la partie, le 3e le boit cul sec.</p><p><b>Un tour :</b> chacun lance le dé et avance. Après les trois joueurs, mini-jeu pour tout le monde (1er +6, 2e +3).</p><p><b>Roue de la fortune 🎡</b> (entre Véga et Belleville, et juste avant la Banque No Cash) : elle tourne deux fois. D'abord elle choisit un de tes deux adversaires, puis ce qui se passe avec lui : lui voler un bracelet ou des canards, échanger vos canards… ou lui donner un bracelet.</p><p><b>Mi-parcours :</b> les cases bleues passent à +5 et les rouges à −5. à la moitié de la partie, « C'est déjà bientôt la fin du festival ! » : 5 cases bleues deviennent rouges et 2 cases râteau deviennent des têtes de mort. Toutes les têtes de mort deviennent alors des shots préparés par les adversaires.</p><p><b>Têtes de mort :</b> la noire, c'est cul sec ; la violette, c'est un shot surprise préparé par les adversaires.</p><p><b>Règle du 6 :</b> chaque 6 sorti au dé permet de distribuer 6 gorgées.</p>
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
-  <p><b>Pouvoirs</b> (une fois par partie) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
+  <p><b>Pouvoirs</b> (une fois, puis rechargeables sur les cases 🔋 Borne de recharge ou avec certains mystères) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
   <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, 4 en duel, celui qui buzze répond à voix haute ; s'il se trompe, les autres marquent ; il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
