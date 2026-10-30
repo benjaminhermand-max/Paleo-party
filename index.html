@@ -45,6 +45,19 @@ button:focus-visible{outline:3px solid var(--duck);outline-offset:2px}
 .rkrow b{flex:1;font-family:var(--display);font-weight:400;font-size:20px;color:var(--pc)}
 .rkm{font-size:30px}.rkd{color:var(--muted);font-size:15px}.rkt{font-family:var(--display);font-size:20px;min-width:80px;text-align:right}
 .rkv{width:22px;text-align:center;color:var(--muted)}.rkv.up{color:#5fdc7a}.rkv.down{color:#e23b4e}
+#pdet{position:fixed;inset:0;z-index:250;display:grid;place-items:center;background:rgba(5,8,18,.8);padding:16px}
+#pdet .pdc{width:min(860px,96vw);flex-direction:row;align-items:flex-start;gap:18px;text-align:left;border-top-color:var(--pc)}
+.pdimg{width:min(220px,26vw);max-height:80vh;object-fit:contain;flex:none;filter:drop-shadow(0 10px 20px rgba(0,0,0,.5))}
+.pdmain{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.pdstats{display:flex;flex-wrap:wrap;gap:10px}.pdstats span{background:var(--panel);border-radius:12px;padding:6px 12px;font-size:17px}
+.pdsec{background:var(--panel);border-radius:12px;padding:8px 12px;line-height:1.5}.pdsec em{font-style:normal;color:var(--muted)}.pdsec em.ok{color:#5fdc7a}
+.pdit{display:inline-flex;align-items:center;gap:4px;margin-right:10px}
+.pdbrs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pdbr{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);border-radius:12px;padding:6px;text-align:center;opacity:.55}
+.pdbr img{width:100%;max-width:120px;filter:grayscale(1) brightness(.6)}.pdbr b{font-size:14px}.pdbr small{font-size:12px;color:var(--muted)}
+.pdbr.on{opacity:1;box-shadow:0 0 0 2px var(--pc)}.pdbr.on img{filter:none}
+.pcard{cursor:pointer}
+@media (max-width:640px){#pdet .pdc{flex-direction:column;align-items:center}}
 .pcard.active{border-color:var(--pc);box-shadow:0 0 22px -6px var(--pc)}
 .pinfo{min-width:0;display:flex;flex-direction:column;gap:3px}
 .pname{font-family:var(--display);font-size:15px;white-space:nowrap;display:flex;align-items:center;gap:8px;min-width:0}
@@ -690,6 +703,22 @@ async function showRanking(before){
   await ask({icon:'🏆',title:'Classement',color:'#ffd23f',body:`<div class="rkl">${pl.map(p=>{const d=before?before[p.id]-rk[p.id]:0;
     return `<div class="rkrow" style="--pc:${p.color}"><span class="rkm">${MEDAL[rk[p.id]]}</span>${avatarHTML(p,40)}<b>${esc(p.nick)}</b><span class="rkd">${DUCK} ${p.ducks} · 🎟️ ${p.bracelets.length}</span><span class="rkt">${scoreOf(p)} pts</span><span class="rkv ${d>0?'up':d<0?'down':''}">${d>0?'▲':d<0?'▼':'='}</span></div>`}).join('')}</div><p><small>Points = canards + ${BR_VAL} par bracelet${BR_BONUS?` (+${BR_BONUS} avec les 6)`:''}</small></p>`,choices:[{label:'On continue !',value:1,cls:'primary'}]});
 }
+function playerDetail(p){
+  if(!p||$('#pdet'))return;const d=def(p),rk=ranks()[p.id];
+  const w=document.createElement('div');w.id='pdet';w.style.setProperty('--pc',p.color);
+  const brs=SCENE_ORDER.map(k=>{const has=p.bracelets.includes(k),s=SC[k];return `<div class="pdbr${has?' on':''}"><img src="${BR_ART[k][0]}" alt=""><b>${s.name}</b><small>${has?'✅ Obtenu':`${s.c} ${DUCK} + ${s.g} gorgée${s.g>1?'s':''}`}</small></div>`}).join('');
+  const st=[];if(p.vip)st.push(`${itemIcon('vip',26)} Bracelet VIP actif`);if(p.slow)st.push('🚧 Bouchon : dé de 1 à 3 au prochain tour');if(p.skip)st.push(p.skip==='inf'?'🚑 À l\'infirmerie : passe son tour':'🚽 Aux WC : passe son tour');if(p.water)st.push('💧 Eau');
+  w.innerHTML=`<div class="card pdc">${fullOf(p)?`<img class="pdimg" src="${fullOf(p)}" alt="">`:avatarHTML(p,110)}
+    <div class="pdmain"><h2 style="color:${p.color};margin:0">${esc(p.nick)} <small style="color:var(--muted);font-size:16px">${MEDAL[rk]} ${RKN[rk]}</small></h2>
+    <div class="pdstats"><span>${DUCK} <b>${p.ducks}</b> canards</span><span>🎟️ <b>${p.bracelets.length}</b>/6 bracelets</span><span>🏆 <b>${scoreOf(p)}</b> pts</span></div>
+    <div class="pdsec">⚡ Pouvoir : ${esc(d.power)} ${p.powerUsed?'<em>(déjà utilisé)</em>':'<em class="ok">(disponible)</em>'}<br><small>${d.pdesc}</small></div>
+    <div class="pdsec">🎒 Sac : ${p.items.length?p.items.map(k=>`<span class="pdit">${itemIcon(k,26)} ${ITEMS[k].n}</span>`).join(''):'<small>vide</small>'}</div>
+    ${st.length?`<div class="pdsec">${st.join('<br>')}</div>`:''}
+    <div class="pdbrs">${brs}</div>
+    <button class="btn primary" id="pdok">Fermer</button></div></div>`;
+  document.body.appendChild(w);
+  const close=()=>w.remove();$('#pdok').onclick=close;w.onclick=e=>{if(e.target===w)close()};
+}
 function renderHUD(){
   if(!S)return;
   const last=S.round===S.maxRound;
@@ -701,10 +730,11 @@ function renderHUD(){
     if(p.items.length)meta.push(p.items.map(k=>itemIcon(k,24)).join(''));
     if(p.vip)meta.push(itemIcon('vip',24));if(p.slow)meta.push('🚧');if(p.skip)meta.push(p.skip==='inf'?'🚑':'🚽');if(p.water)meta.push('💧');
     meta.push(p.powerUsed?'⚡ utilisé':'⚡ dispo');
-    h+=`<div class="pcard${S.cur===p.id?' active':''}" style="--pc:${p.color}"><div class="prank r${rk[p.id]}" title="${scoreOf(p)} points">${MEDAL[rk[p.id]]}<small>${RKN[rk[p.id]]}</small></div>${avatarHTML(p,46)}<div class="pinfo"><div class="pname"><span class="pnn">${esc(p.nick)}</span><span class="ppts" title="Canards + bracelets">${scoreOf(p)} pts</span></div><div class="pducks">${DUCK} ${p.ducks}</div><div class="brs">${brs}</div></div><div class="pmeta">${meta.join(' ')}</div></div>`;
+    h+=`<div class="pcard${S.cur===p.id?' active':''}" data-pid="${p.id}" style="--pc:${p.color}"><div class="prank r${rk[p.id]}" title="${scoreOf(p)} points">${MEDAL[rk[p.id]]}<small>${RKN[rk[p.id]]}</small></div>${avatarHTML(p,46)}<div class="pinfo"><div class="pname"><span class="pnn">${esc(p.nick)}</span><span class="ppts" title="Canards + bracelets">${scoreOf(p)} pts</span></div><div class="pducks">${DUCK} ${p.ducks}</div><div class="brs">${brs}</div></div><div class="pmeta">${meta.join(' ')}</div></div>`;
   }
   h+=`<div class="tools"><button class="iconbtn${overview?' on':''}" id="bMap" aria-label="Vue d'ensemble">🗺️</button><button class="iconbtn" id="bSound" aria-label="Son">${muted?'🔇':'🔊'}</button><button class="iconbtn" id="bMenu" aria-label="Menu" style="grid-column:span 2">☰</button></div>`;
   $('#hud').innerHTML=h;
+  $('#hud').querySelectorAll('.pcard').forEach(c=>c.onclick=()=>playerDetail(S.players.find(p=>p.id===c.dataset.pid)));
   $('#bSound').onclick=()=>{muted=!muted;store('paleo-muted',muted);if(muted&&hymn)hymn.pause();renderHUD()};
   $('#bMenu').onclick=menu;
   $('#bMap').onclick=()=>{overview=!overview;renderHUD();if(overview)camAll(600);else{const p=S.players.find(x=>x.id===S.cur);if(p)camOn(p,600)}};
