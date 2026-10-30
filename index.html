@@ -2255,6 +2255,7 @@ async function start(fresh){
       while(left.length>1){const k=await spinWheel(left.map(i=>({t:S.players[i].nick,c:S.players[i].color})),ord.length?'Qui joue en 2e ?':'Qui joue en 1er ?');ord.push(left.splice(k,1)[0])}
       ord.push(left[0]);S.order=ord;save()}
     const ord=S.order.map(i=>S.players[i]);
+    {const last=ord[ord.length-1];SFX.drink();await info('🍺',`${esc(last.nick)} joue en dernier`,'Pour se consoler… une gorgée !',last.color)}
     await ask({icon:'⛺',title:'Réveil au camping',body:`<p>Chacun part avec 5 ${DUCK}. Ordre de jeu :</p>${ord.map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0"><b>${i+1}.</b> ${avatarHTML(p,36)} <b style="color:${p.color}">${esc(p.nick)}</b></div>`).join('')}<p><small>Touche une case du plateau à tout moment pour voir son effet.</small></p>`,choices:[{label:'Ouvrez les portes !',value:1,cls:'primary'}]});
     if(hymn)hymn.pause();
   }
