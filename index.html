@@ -1507,7 +1507,7 @@ async function mgBlind(players,{duel}={}){
   if(!tracks.length){stage.innerHTML=`<div class="q">😕 Impossible de joindre Deezer</div><div class="hint">Vérifie la connexion internet de la tablette. Le blind test est annulé pour ce tour.</div><button class="btn primary" id="nx">Continuer</button>`;await new Promise(r=>$('#nx').onclick=r);mgClose();return sc}
   const bz=makeBuzzers(players,p=>handler&&handler(p),players.length===2);
   players.forEach(p=>bz.set(p.id,'0 pt'));
-  await ready(stage,`${tracks.length} morceaux`,'Montez le son ! Buzzez dès que vous reconnaissez la chanson : 4 propositions apparaissent, touchez la bonne. Raté : bloqué pour ce morceau, la musique reprend pour les autres.');
+  await ready(stage,`${tracks.length} morceaux`,'Montez le son ! Buzzez dès que vous reconnaissez la chanson. La musique s\'arrête : dites l\'artiste et le titre à voix haute, puis Valider. La réponse s\'affiche : bonne réponse, +1 point pour vous. Raté : +1 point pour chacun des autres !');
   const au=new Audio();au.preload='auto';
   for(let i=0;i<tracks.length;i++){const tk=tracks[i];
     await new Promise(done=>{
@@ -1526,13 +1526,13 @@ async function mgBlind(players,{duel}={}){
         await new Promise(r=>nb.onclick=r);au.pause();bz.clear();done()};
       au.onplay=()=>vin.classList.add('spin');au.onpause=()=>vin.classList.remove('spin');
       au.onended=()=>{if(!over&&!responder)reveal('Temps écoulé ! C\'était…')};
-      handler=p=>{if(over||responder||locked.has(p.id))return;responder=p;au.pause();SFX.buzz();bz.state(p.id,'on');
-        hint.innerHTML=`<b style="color:${p.color}">${esc(p.nick)}</b>, touche la bonne chanson !`;
-        judge.innerHTML=`<div class="opts">${opts.map((o,k)=>`<button class="opt${ko.has(k)?' ko':''}" data-k="${k}" ${ko.has(k)?'disabled':''}>${esc(o.t)}<br><small>${esc(o.a)}</small></button>`).join('')}</div>`;
-        judge.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;
-          if(opts[k].ok){sc[p.id]++;bz.set(p.id,sc[p.id]+' pt');SFX.coin();reveal(`Bravo <b style="color:${p.color}">${esc(p.nick)}</b> !`)}
-          else{SFX.bad();ko.add(k);locked.add(p.id);bz.state(p.id,'locked');responder=null;judge.innerHTML='';
-            if(locked.size>=players.length)reveal('Personne n\'a trouvé. C\'était…');else{hint.textContent='Raté ! Les autres peuvent buzzer.';au.play().catch(()=>{})}}})};
+      handler=p=>{if(over||responder||locked.has(p.id))return;responder=p;au.pause();SFX.buzz();bz.state(p.id,'on');{const sk=$('#skip');if(sk)sk.remove()}
+        hint.innerHTML=`<b style="color:${p.color}">${esc(p.nick)}</b>, dis à voix haute l'artiste et le titre, puis appuie sur Valider.`;
+        judge.innerHTML=`<button class="btn primary" id="val" style="font-size:22px;padding:14px 34px">🎤 Valider ma réponse</button>`;
+        $('#val').onclick=()=>{judge.innerHTML=`<div class="bres"><div><b>${esc(tk.t)}</b><br>${esc(tk.a)}</div></div><div class="hint">${esc(p.nick)} avait-il la bonne réponse ?</div><div class="trow"><button class="btn primary" id="okb">✅ Bonne réponse</button><button class="btn" id="kob">❌ Raté</button></div>`;
+          $('#okb').onclick=()=>{sc[p.id]++;bz.set(p.id,sc[p.id]+' pt');SFX.coin();reveal(`Bravo <b style="color:${p.color}">${esc(p.nick)}</b> ! +1 point`)};
+          $('#kob').onclick=()=>{SFX.bad();const os=players.filter(x=>x!==p);os.forEach(x=>{sc[x.id]++;bz.set(x.id,sc[x.id]+' pt')});bz.state(p.id,'locked');
+            reveal(`Raté ! +1 point pour ${os.map(x=>`<b style="color:${x.color}">${esc(x.nick)}</b>`).join(' et ')}`)}}};
       $('#skip').onclick=()=>reveal('C\'était…');
     });
   }
@@ -2050,7 +2050,7 @@ function rules(){
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
   <p><b>Pouvoirs</b> (une fois par partie) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
-  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, 4 en duel, avec 4 propositions après le buzz ; il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
+  <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, 4 en duel, celui qui buzze répond à voix haute ; s'il se trompe, les autres marquent ; il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (démasquez l'agent qui ne connaît pas le mot) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
   </div>`,choices:[{label:'Compris',value:1,cls:'primary'}]});
