@@ -377,6 +377,13 @@ body.mgopen{background:#0b1020}
 #taupeapp{position:fixed;inset:0;z-index:200;background:#0b1020;display:flex;flex-direction:column}
 #taupeapp iframe{flex:1;width:100%;border:0;background:#fff}
 .tabar{display:flex;align-items:center;gap:12px;padding:8px 12px;background:#141a3c;border-bottom:3px solid #ffd23f}.tabar b{font-family:var(--display);font-weight:400;font-size:20px;color:var(--duck)}.tabar span{flex:1;color:var(--muted);font-size:14px}
+.rlt{position:relative;width:min(560px,86vw);height:258px;overflow:hidden;border-radius:22px;border:5px solid #f3c33b;background:linear-gradient(#0b1020,#1b2350 50%,#0b1020);box-shadow:0 0 40px rgba(255,210,63,.35),inset 0 0 30px rgba(0,0,0,.7)}
+.rltr{transition:transform 3.6s cubic-bezier(.12,.62,.1,1)}
+.rlti{height:86px;display:flex;align-items:center;justify-content:center;gap:14px;font-size:clamp(20px,3vw,30px);color:#fff;opacity:.55}
+.rlti span{font-size:38px}.rlti b{font-family:var(--display);font-weight:400}
+.rlti.win{opacity:1;color:var(--duck);animation:pop .4s ease-out}
+.rltw{position:absolute;left:0;right:0;top:86px;height:86px;border-top:3px solid #ffd23f;border-bottom:3px solid #ffd23f;background:rgba(255,210,63,.08);pointer-events:none}
+.rlt::before,.rlt::after{content:'';position:absolute;left:0;right:0;height:60px;z-index:1;pointer-events:none}.rlt::before{top:0;background:linear-gradient(#0b1020,transparent)}.rlt::after{bottom:0;background:linear-gradient(transparent,#0b1020)}
 .fsec{width:min(1000px,100%);margin:6px 0 -4px;font-family:var(--display);font-weight:400;color:var(--duck);text-align:left}
 .fcardg.irl{border-color:#b04ad6;background:linear-gradient(160deg,#2a1a48,var(--panel))}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:min(1000px,100%)}
@@ -1488,9 +1495,25 @@ async function duel(p,forced){
   await info('🏆',`${esc(w.nick)} gagne le duel !`,`+${v} ${DUCK} piqués à ${esc(l.nick)}.`,w.color);
 }
 
+async function gameRoulette(g,pool){
+  const d=$('#dice'),H=86;
+  const seq=[];for(let i=0;i<34;i++)seq.push(pool[i%pool.length]);shuffle(seq);seq.push(g,pick(pool));
+  d.innerHTML=`<div class="dicebox"><div class="qnum" style="font-size:18px">Mini-jeu de fin de tour</div><div class="rlt"><div class="rltr" id="rltr">${seq.map(k=>`<div class="rlti"><span>${MG[k].i}</span><b>${MG[k].n}</b></div>`).join('')}</div><div class="rltw"></div></div><div class="dtotal" id="rltt">&nbsp;</div></div>`;
+  d.hidden=false;
+  const tr=$('#rltr'),target=(seq.length-2)*H-H;void tr.offsetWidth;
+  tr.style.transform=`translateY(${-target}px)`;
+  let last=-1;const t0=performance.now();
+  await new Promise(res=>{(function loop(){const m=new DOMMatrix(getComputedStyle(tr).transform),k=Math.floor(-m.m42/H);if(k!==last){last=k;tone(700+rnd(300),.03,'square',.04)}
+    if(performance.now()-t0<3700)requestAnimationFrame(loop);else res()})()});
+  SFX.fanfare();$('#rltt').textContent=MG[g].n+' !';tr.children[seq.length-2].classList.add('win');
+  await sleep(1500);d.hidden=true;
+}
 async function endRoundGame(){
   let g=S.forced;
-  if(!g){const keys=Object.keys(MG).filter(k=>k!==S.lastGame&&mgOK(k));g=pick(keys)}
+  if(!g){let keys=Object.keys(MG).filter(k=>mgOK(k)&&!(S.played||[]).includes(k));
+    if(!keys.length){S.played=[];keys=Object.keys(MG).filter(k=>k!==S.lastGame&&mgOK(k))}
+    g=pick(keys);await gameRoulette(g,Object.keys(MG).filter(mgOK))}
+  S.played=[...(S.played||[]),g];
   S.lastGame=g;
   const m=MG[g];
   await ask({icon:m.i,title:m.n,body:`<p>Mini-jeu de fin de tour.</p><p>${m.d}</p><p><small>1er : +6 ${DUCK} · 2e : +3 ${DUCK}${S.bizuDouble?' · Récompense doublée pour Bizu s\'il gagne':''}</small></p>`,color:'#13a58e',choices:[{label:'C\'est parti !',value:1,cls:'primary'}]});
