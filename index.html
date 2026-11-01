@@ -1257,7 +1257,7 @@ async function rollDice(p,count){
     if((S.shooter||0)>=3){const n=S.shooter;S.shooter=0;left--;save();renderHUD();
       await ask({icon:'🥃',title:'Règle du 6 : le shooter est plein !',color:'#e23b4e',body:`<p>Le shooter contient déjà <b>${n} ingrédients</b>… ${esc(p.nick)} fait un 6 : <b>c'est toi qui le bois, cul sec !</b></p><p>On rince le shooter, et on recommence.</p>`,choices:[{label:'Cul sec ! 🥃',value:1,cls:'primary'}]})}
     if(left>0){S.shooter=(S.shooter||0)+left;save();renderHUD();
-      await ask({icon:'🥃',title:'Règle du 6 !',color:'#ffd23f',body:`<p>${esc(p.nick)} ajoute <b>${left>1?left+' ingrédients':'un ingrédient'}</b> de son choix dans le shooter.</p><p>Il contient maintenant <b>${S.shooter} ingrédient${S.shooter>1?'s':''}</b>. ${S.shooter>=3?'⚠️ Il est plein : <b>le prochain qui fait un 6 le boit !</b>':`Encore ${3-S.shooter} et il sera plein : le 6 suivant le boira.`}</p>`,choices:[{label:'C\'est versé',value:1,cls:'primary'}]})}
+      await ask({icon:'🥃',title:'Règle du 6 !',color:'#ffd23f',body:`<p>${esc(p.nick)} ajoute <b>${left>1?left+' ingrédients':'un ingrédient'}</b> de son choix dans le shooter.</p><p>Il contient maintenant <b>${S.shooter} ingrédient${S.shooter>1?'s':''}</b>. ${S.shooter>=3?'⚠️ Il est plein : <b>le prochain qui fait un 6 le boit !</b>':`Encore ${3-S.shooter} et il sera plein : le 6 suivant le boira.`}</p>`,plain:true,choices:[{label:'🥃 C\'est rempli !',value:1,cls:'primary drinkbtn'}]})}
   }
   return tot;
 }
