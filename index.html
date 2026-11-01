@@ -403,6 +403,25 @@ body.mgopen{background:#0b1020}
 .rlt::before,.rlt::after{content:'';position:absolute;left:0;right:0;height:60px;z-index:1;pointer-events:none}.rlt::before{top:0;background:linear-gradient(#0b1020,transparent)}.rlt::after{bottom:0;background:linear-gradient(transparent,#0b1020)}
 .btn.drinkbtn{font-size:clamp(24px,3.2vw,34px);padding:20px 30px;border-radius:20px;background:linear-gradient(#ffd23f,#f0a500);box-shadow:0 8px 0 #9a6400,0 0 30px rgba(255,210,63,.45);animation:pop .3s ease-out}
 .btn.drinkbtn:active{transform:translateY(6px);box-shadow:0 2px 0 #9a6400}
+.fin{max-width:1100px}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:12px;width:100%;height:min(520px,62vh);margin-top:8px}
+.pcol{flex:1;max-width:280px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch}
+.ptop{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;animation:pop .6s cubic-bezier(.2,1.5,.4,1) both}
+.pcol:nth-child(1) .ptop{animation-delay:.6s}.pcol:nth-child(2) .ptop{animation-delay:1.2s}.pcol:nth-child(3) .ptop{animation-delay:.2s}
+.pimg{height:min(190px,22vh);object-fit:contain;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
+.pcrown{font-size:48px;margin-bottom:-14px;animation:bounce 1s ease-in-out infinite alternate}
+.ptop b{font-family:var(--display);font-weight:400;font-size:clamp(18px,2.4vw,26px);color:var(--pc)}
+.ptot{font-family:var(--display);font-size:clamp(24px,3.4vw,38px);color:var(--duck)}
+.ptop small{color:var(--muted);font-size:13px}
+.pstep{margin-top:6px;border-radius:14px 14px 0 0;background:linear-gradient(color-mix(in srgb,var(--pc) 75%,#fff),color-mix(in srgb,var(--pc) 55%,#000));border:3px solid rgba(255,255,255,.3);border-bottom:none;display:flex;justify-content:center;padding-top:10px;max-height:44%;min-height:70px;transform-origin:bottom;animation:grow .7s ease-out both}
+.pstep span{font-family:var(--display);font-size:clamp(40px,6vw,70px);color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.4)}
+@keyframes grow{from{transform:scaleY(0)}}
+.awards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;width:100%}
+.award{background:var(--panel);border-radius:16px;border:2px solid var(--pc);padding:10px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.award span{font-size:34px}.award b{font-family:var(--display);font-weight:400;color:var(--duck)}.award div{font-weight:800;color:var(--pc)}.award small{color:var(--muted)}
+.stt{width:100%;overflow-x:auto}.stt table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:14px;overflow:hidden}
+.stt th,.stt td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line)}.stt td:first-child{text-align:left}.stt th{font-family:var(--display);font-weight:400}
+.stt td.best{color:var(--duck);font-weight:800}
 .fsec{width:min(1000px,100%);margin:6px 0 -4px;font-family:var(--display);font-weight:400;color:var(--duck);text-align:left}
 .fcardg.irl{border-color:#b04ad6;background:linear-gradient(160deg,#2a1a48,var(--panel))}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:min(1000px,100%)}
@@ -1057,7 +1076,10 @@ function toast(msg,color){const t=document.createElement('div');t.className='toa
 function ask({icon='',title='',body='',choices=[{label:'Continuer',value:true,cls:'primary'}],color,wide,plain}={}){
   // Écran où quelqu'un doit boire : un seul gros bouton « C'est bu ! »
   const txt=(title+' '+body).replace(/<[^>]*>/g,' ');
-  if(!plain&&choices.length===1&&/gorg|\bbois\b|\bboit\b|boivent|cul sec|\bshot\b|shooter|tournée/i.test(txt)&&!/pas de gorg|dispens/i.test(txt))choices=[{label:'🍻 C\'est bu !',value:choices[0].value,cls:'primary drinkbtn'}];
+  if(!plain&&choices.length===1&&/gorg|\bbois\b|\bboit\b|boivent|cul sec|\bshot\b|shooter|tournée/i.test(txt)&&!/pas de gorg|dispens/i.test(txt)){choices=[{label:'🍻 C\'est bu !',value:choices[0].value,cls:'primary drinkbtn'}];
+    // statistiques : qui boit combien
+    try{if(S&&!S.free){const tt=title.replace(/<[^>]*>/g,' ');let who=S.players.filter(q=>tt.includes(q.nick));if(!who.length&&/distribu|tournée/i.test(txt)){}else{if(!who.length){const c=S.players.find(q=>q.id===S.cur);if(c)who=[c]}
+      const m=txt.match(/(\d+)\s*gorg/i),n=/cul sec|shooter|\bshot\b/i.test(txt)?3:(m?+m[1]:1);who.forEach(q=>st(q,'gorg',n))}}}catch(e){}}
   return new Promise(res=>{
     const m=$('#modal');m.style.zIndex=$('#title').hidden?'':'80';
     m.innerHTML=`<div class="card${wide?' wide':''}" role="dialog" aria-modal="true" style="--cc:${color||'var(--duck)'}">${icon?`<div class="ic">${icon}</div>`:''}<h2>${title}</h2>${body?`<div class="body">${body}</div>`:''}<div class="choices"></div></div>`;
@@ -1076,8 +1098,9 @@ function actionBar(p,choices,msg){
     choices.forEach(c=>{const b=document.createElement('button');b.className='btn '+(c.cls||'');b.innerHTML=c.label;b.disabled=!!c.disabled;b.onclick=()=>res(c.value);box.appendChild(b)});
   });
 }
-function gain(p,n,silent){p.ducks+=n;if(!silent){SFX.coin();toast(`${esc(p.nick)} +${n} ${DUCK}`,p.color)}renderHUD();return n}
-function lose(p,n,silent){const v=Math.min(n,p.ducks);p.ducks-=v;if(!silent){SFX.bad();toast(`${esc(p.nick)} −${v} ${DUCK}`,'var(--bad)')}renderHUD();return v}
+function st(p,k,n=1){if(!S||!p||S.free)return;S.stats=S.stats||{};const o=S.stats[p.id]=S.stats[p.id]||{};o[k]=(o[k]||0)+n}
+function gain(p,n,silent){p.ducks+=n;st(p,'won',n);if(!silent){SFX.coin();toast(`${esc(p.nick)} +${n} ${DUCK}`,p.color)}renderHUD();return n}
+function lose(p,n,silent){const v=Math.min(n,p.ducks);p.ducks-=v;st(p,'lost',v);if(!silent){SFX.bad();toast(`${esc(p.nick)} −${v} ${DUCK}`,'var(--bad)')}renderHUD();return v}
 async function chooseTarget(p,title,cancel=true){
   const ch=others(p).map(o=>({label:`${o.emoji} ${esc(o.nick)} · ${o.ducks} ${DUCK}`,value:o.id}));
   if(cancel)ch.push({label:'Annuler',value:null,cls:'ghost'});
@@ -1220,7 +1243,7 @@ async function playTurn(p){
       await actionBar(p,[{label:'↩️ Revenir au choix',value:1,cls:'primary'}],`<b style="color:${p.color}">${esc(p.nick)}</b> regarde la carte : ${marks.length>1?'les cases qui brillent montrent où tu peux arriver':'la case qui brille montre où tu arrives'} avec ${total}.`);
       highlight([]);await camOn(p,450);
     }
-    if(v==='pot'){p.powerUsed=true;SFX.drink();await info('🧪','Potion de génépi',`${others(p).map(o=>esc(o.nick)).join(' et ')} boivent 1 gorgée chacun.`,p.color);renderHUD();total=await rollDice(p,dice)}
+    if(v==='pot'){p.powerUsed=true;SFX.drink();await info('🧪',`${others(p).map(o=>esc(o.nick)).join(' et ')} boivent 1 gorgée`,'Panoramix sort la potion de génépi : une gorgée chacun.',p.color);renderHUD();total=await rollDice(p,dice)}
   }
   await moveSteps(p,total);
   await land(p);
@@ -1253,8 +1276,8 @@ async function rollDice(p,count){
   d.querySelector('.dtotal').textContent=count>1?`${vals.join(' + ')} = ${tot}`:`${tot}`;
   await sleep(1000);d.hidden=true;
   const six=max===6?vals.filter(v=>v===6).length:0;
-  if(six){SFX.drink();let left=six;
-    if((S.shooter||0)>=3){const n=S.shooter;S.shooter=0;left--;save();renderHUD();
+  if(six){SFX.drink();let left=six;st(p,'six',six);
+    if((S.shooter||0)>=3){const n=S.shooter;S.shooter=0;left--;st(p,'shooter');save();renderHUD();
       await ask({icon:'🥃',title:'Règle du 6 : le shooter est plein !',color:'#e23b4e',body:`<p>Le shooter contient déjà <b>${n} ingrédients</b>… ${esc(p.nick)} fait un 6 : <b>c'est toi qui le bois, cul sec !</b></p><p>On rince le shooter, et on recommence.</p>`,choices:[{label:'Cul sec ! 🥃',value:1,cls:'primary'}]})}
     if(left>0){S.shooter=(S.shooter||0)+left;save();renderHUD();
       await ask({icon:'🥃',title:'Règle du 6 !',color:'#ffd23f',body:`<p>${esc(p.nick)} ajoute <b>${left>1?left+' ingrédients':'un ingrédient'}</b> de son choix dans le shooter.</p><p>Il contient maintenant <b>${S.shooter} ingrédient${S.shooter>1?'s':''}</b>. ${S.shooter>=3?'⚠️ Il est plein : <b>le prochain qui fait un 6 le boit !</b>':`Encore ${3-S.shooter} et il sera plein : le 6 suivant le boira.`}</p>`,plain:true,choices:[{label:'🥃 C\'est rempli !',value:1,cls:'primary drinkbtn'}]})}
@@ -1282,7 +1305,7 @@ async function moveSteps(p,n){
       }
       highlight([]);
     }
-    p.prev=cur.id;p.pos=nx;SFX.step();renderTokens();camOn(p,280);
+    p.prev=cur.id;p.pos=nx;st(p,'steps');SFX.step();renderTokens();camOn(p,280);
     setBar(`<div class="who">${avatarHTML(p,44)}<div><b style="color:${p.color}">${esc(p.nick)}</b> avance · encore ${n-i-1}</div></div>`);
     await sleep(320);
     const node=N[nx];const last=i===n-1;
@@ -1330,14 +1353,14 @@ async function passScene(p,node,{landing=false,free=false}={}){
     body:`${landing&&!free?`<div class="sfbig" style="font-size:clamp(34px,5vw,54px)"><s style="opacity:.45;font-size:.6em">${s.c}</s> ${cost} ${DUCK}</div>`:''}<p>Pour entrer, il faut <b>${cost} ${DUCK}</b> et <b>${s.g} gorgée${s.g>1?'s':''}</b>.${landing&&!free?` <b style="color:var(--good)">Tu t'arrêtes pile devant : −3 canards !</b>`:` <small>(${s.c-3} ${DUCK} si tu t'arrêtes pile dessus)</small>`}${free?' Le passe bénévole t\'évite de payer.':''}</p><p><small>Tu as ${p.ducks} ${DUCK}. En fin de partie, chaque bracelet vaut ${BR_VAL} ${DUCK}, et les 6 rapportent ${BR_BONUS} ${DUCK} de bonus.</small></p>`,
     choices:[{label:`Acheter : ${cost} ${DUCK} + ${s.g} 🍺`,value:true,cls:'primary',disabled:p.ducks<cost},{label:p.ducks<cost?'Pas assez de canards':'Passer mon chemin',value:false,cls:'ghost'}]});
   if(!v)return;
-  p.ducks-=cost;renderHUD();SFX.drink();await braceletShow(p,k,s.g);p.bracelets.push(k);renderHUD();
+  p.ducks-=cost;st(p,'lost',cost);st(p,'gorg',s.g);renderHUD();SFX.drink();await braceletShow(p,k,s.g);p.bracelets.push(k);renderHUD();
   const slot=$(`#br-${p.id}-${k}`);if(slot)slot.classList.add('pop');
   if(p.bracelets.length===6)await sixBracelets(p);
   await sleep(400);
 }
 
 async function land(p){
-  const n=N[p.pos];const t=n.t;
+  const n=N[p.pos];const t=n.t;st(p,'land_'+(t.startsWith('scene:')?'scene':t.startsWith('shop:')?'shop':t));
   if(t.startsWith('scene:')){await passScene(p,n,{landing:true});return}
   if(t.startsWith('shop:')){await shop(p,t.slice(5),false);return}
   switch(t){
@@ -1543,8 +1566,8 @@ async function duel(p,forced){
   const pl=[p,opp].sort((a,b)=>a.seat-b.seat);
   const sc=await RUN[game](pl,{duel:true});
   if(sc[p.id]===sc[opp.id]){await info('🤝','Égalité','Personne ne gagne le duel.','#13a58e');return}
-  const w=sc[p.id]>sc[opp.id]?p:opp, l=w===p?opp:p;
-  const v=lose(l,5,true);w.ducks+=v;SFX.fanfare();renderHUD();
+  const w=sc[p.id]>sc[opp.id]?p:opp, l=w===p?opp:p;st(w,'duelW');
+  const v=lose(l,5,true);w.ducks+=v;st(w,'won',v);SFX.fanfare();renderHUD();
   await info('🏆',`${esc(w.nick)} gagne le duel !`,`+${v} ${DUCK} piqués à ${esc(l.nick)}.`,w.color);
 }
 
@@ -1579,7 +1602,7 @@ async function endRoundGame(){
     if(i>0&&sc[p.id]<sc[sorted[i-1].id])rank=i;
     let r=sc[p.id]<=0||sc._direct?0:vals[rank];
     if(r>0&&S.bizuDouble&&p.id==='bizu'&&rank===0)r*=2;
-    p.ducks+=r;rows.push({p,r,s:sc[p.id],rank});
+    p.ducks+=r;if(r>0)st(p,'won',r);if(rank===0&&sc[p.id]>0)st(p,'mgW');rows.push({p,r,s:sc[p.id],rank});
   });
   if(sc._direct)rows.forEach(x=>x.r=x.s*2);
   S.forced=null;S.bizuDouble=false;SFX.fanfare();renderHUD();
@@ -1595,10 +1618,37 @@ async function finale(){
   if(S.shooter&&rows[2]){const l=rows[2].p;SFX.drink();await info('🥃',`Le shooter de la honte pour ${esc(l.nick)} !`,`${esc(l.nick)} termine 3e et doit boire le shooter : <b>${S.shooter} ingrédient${S.shooter>1?'s':''}</b> ajouté${S.shooter>1?'s':''} pendant la partie. Cul sec !`,l.color)}
   SFX.fanfare();setTimeout(SFX.fanfare,700);
   const t=$('#title');t.hidden=false;
-  t.innerHTML=`<div class="tin"><img class="tlogo sm" src="${LOGO}" alt="Logo Team Padre"><div class="logo">Fin du festival<span>Les lumières se rallument</span></div>
-  <div class="final">${rows.map((r,i)=>`<div class="fcard${i===0?' win':''}" style="--pc:${r.p.color}">${i===0?'<div style="font-size:40px">👑</div>':''}${fullOf(r.p)?`<img class="fullimg" src="${fullOf(r.p)}" alt="">`:avatarHTML(r.p,86)}<b style="font-family:var(--display);font-size:22px;color:${r.p.color}">${esc(r.p.nick)}</b><div class="tot">${r.tot} ${DUCK}</div><small>${r.p.ducks} canards + ${r.p.bracelets.length} bracelet${r.p.bracelets.length>1?'s':''} × ${BR_VAL}${r.p.bracelets.length===6?` + ${BR_BONUS} (festival complet)`:''}</small></div>`).join('')}</div>
-  <p class="tag">${esc(rows[0].p.nick)} remporte le Paléo Party ! Les Aspirators peuvent aller ramasser les gobelets.</p>
-  <button class="btn primary" id="again">Nouvelle partie</button></div>`;
+  const ST=id=>(S.stats||{})[id]||{},g=(id,k)=>ST(id)[k]||0;
+  const pod=[rows[1],rows[0],rows[2]].filter(Boolean),place=r=>rows.indexOf(r);
+  const H=['62%','82%','46%'];
+  // Récompenses : le meilleur de chaque statistique
+  const AW=[
+    ['🏆','Roi des mini-jeux','mini-jeux gagnés',id=>g(id,'mgW')],
+    ['⚔️','Duelliste','duels gagnés',id=>g(id,'duelW')],
+    ['👣','Marathonien','cases parcourues',id=>g(id,'steps')],
+    ['🔴','Abonné aux cases rouges','cases rouges',id=>g(id,'land_red')],
+    ['🔵','Chouchou des cases bleues','cases bleues',id=>g(id,'land_blue')],
+    ['🍺','Plus gros buveur','gorgées bues (environ)',id=>g(id,'gorg')],
+    ['🦆','Machine à canards','canards gagnés',id=>g(id,'won')],
+    ['💸','Panier percé','canards perdus ou dépensés',id=>g(id,'lost')],
+    ['🎲','Main en or','6 au dé',id=>g(id,'six')],
+    ['🥃','Victime du shooter','shooters bus',id=>g(id,'shooter')],
+    ['❓','Curieux','cases mystère',id=>g(id,'land_mystere')],
+    ['🎡','Accro à la roue','tours de roue',id=>g(id,'land_roue')],
+  ].map(([i,n,u,f])=>{const v=S.players.map(p=>({p,v:f(p.id)})).sort((a,b)=>b.v-a.v);return v[0].v>0?{i,n,u,p:v[0].p,v:v[0].v,tie:v[1]&&v[1].v===v[0].v}:null}).filter(Boolean);
+  const LINES=[['🏆','Mini-jeux gagnés','mgW'],['⚔️','Duels gagnés','duelW'],['👣','Cases parcourues','steps'],['🔵','Cases bleues','land_blue'],['🔴','Cases rouges','land_red'],['❓','Mystères','land_mystere'],['🎡','Roues','land_roue'],['🍺','Gorgées (environ)','gorg'],['🎲','6 au dé','six'],['🦆','Canards gagnés','won'],['💸','Canards perdus','lost']];
+  t.innerHTML=`<div class="tin fin"><div class="logo">Fin du festival<span>Les lumières se rallument</span></div>
+  <div class="podium">${pod.map(r=>{const k=place(r);return `<div class="pcol" style="--pc:${r.p.color}">
+    <div class="ptop">${k===0?'<div class="pcrown">👑</div>':''}${fullOf(r.p)?`<img class="pimg" src="${fullOf(r.p)}" alt="">`:avatarHTML(r.p,110)}<b>${esc(r.p.nick)}</b><div class="ptot">${r.tot} pts</div><small>${r.p.ducks} ${DUCK} + ${r.p.bracelets.length} 🎟️${r.p.bracelets.length===6?' + bonus':''}</small></div>
+    <div class="pstep" style="height:${H[k]}"><span>${['1','2','3'][k]}</span></div></div>`}).join('')}</div>
+  <p class="tag" style="font-size:20px">🎉 <b style="color:${rows[0].p.color}">${esc(rows[0].p.nick)}</b> remporte le Paléo Party !</p>
+  ${AW.length?`<h3 class="fsec" style="text-align:center">🏅 Les trophées de la soirée</h3><div class="awards">${AW.map(a=>`<div class="award" style="--pc:${a.p.color}"><span>${a.i}</span><b>${a.n}</b><div>${esc(a.p.nick)}${a.tie?' (ex æquo)':''}</div><small>${a.v} ${a.u}</small></div>`).join('')}</div>`:''}
+  <h3 class="fsec" style="text-align:center">📊 Statistiques</h3>
+  <div class="stt"><table><tr><th></th>${rows.map(r=>`<th style="color:${r.p.color}">${esc(r.p.nick)}</th>`).join('')}</tr>
+  ${LINES.map(([i,n,k])=>{const vals=rows.map(r=>g(r.p.id,k)),mx=Math.max(...vals);return `<tr><td>${i} ${n}</td>${vals.map(v=>`<td class="${v===mx&&mx>0?'best':''}">${v}</td>`).join('')}</tr>`}).join('')}
+  <tr><td>🎟️ Bracelets</td>${rows.map(r=>`<td>${r.p.bracelets.length}/6</td>`).join('')}</tr></table></div>
+  <p class="tag">Les Aspirators peuvent aller ramasser les gobelets. 🧹</p>
+  <button class="btn primary" id="again" style="font-size:22px;padding:14px 30px">Nouvelle partie</button></div>`;
   $('#again').onclick=()=>location.reload();
 }
 
