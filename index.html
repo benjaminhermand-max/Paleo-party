@@ -125,6 +125,7 @@ button:focus-visible{outline:3px solid var(--duck);outline-offset:2px}
 .scard .fullimg{height:210px;max-width:100%;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.5))}
 .fcard .fullimg{height:200px;object-fit:contain}
 #app,#modal,#mg,#dice,#splash,#brshow{touch-action:none}
+#brshow .brdrink{font-size:clamp(18px,2.4vw,26px);font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:999px;padding:6px 18px;animation:fadeup .5s .8s both}
 #brshow .brok{margin-top:10px;font-size:clamp(18px,2.2vw,24px);padding:12px 44px;animation:fadeup .5s 1s both}
 #splash .spnext{margin-top:18px;animation:fadeup .5s .6s both}
 #splash .sp.turn{text-align:center;display:flex;flex-direction:column;align-items:center}
@@ -673,7 +674,7 @@ const MYST=[
   {i:'🎲',t:'Bizu a changé les règles',x:'Tout le monde donne tous ses canards à son voisin !',f:async()=>{const d=S.players.map(x=>x.ducks);S.players.forEach((x,i)=>x.ducks=d[(i+2)%3]);SFX.fanfare();renderHUD()}},
   {i:'🧹',t:'Shift Aspirator surprise',x:'Le chef de crew te tend un râteau. Ramasse un max de gobelets : 1 canard par gobelet.',f:async p=>aspiratorShift(p)},
   {i:'☀️',t:'Coup de soleil',x:'Tu as oublié la crème. Bois 2 gorgées.',f:async()=>SFX.drink()},
-  {i:'☠️',t:'Le druide a parlé',x:'Choisis un joueur : il fait cul sec.',f:async p=>{const t=await chooseTarget(p,'Qui fait cul sec ?',false);if(t){SFX.drink();toast(`☠️ ${t.nick} : CUL SEC !`,t.color)}}},
+  {i:'☠️',t:'Le druide a parlé',x:'Choisis un joueur : il fait cul sec.',f:async p=>{const t=await chooseTarget(p,'Qui fait cul sec ?',false);if(t){SFX.drink();await info('☠️',`${esc(t.nick)} : CUL SEC !`,'Le druide a parlé.',t.color)}}},
   {i:'⛺',t:'Trésor du camping',x:'En rangeant la tente, tu trouves un magot : +8 canards.',f:async p=>gain(p,8)},
   {i:'💸',t:'Roi du Paléo',x:'Tu prélèves 2 canards à chacun des autres joueurs.',f:async p=>{for(const o of others(p)){if(o.vip){o.vip=false;toast(`🎫 ${o.nick} est protégé`)}else{p.ducks+=lose(o,2,true)}}SFX.coin();renderHUD()}},
   {i:'🎫',t:'Bracelet VIP offert',x:'Un pote de l\'orga te file un bracelet VIP. Il te protège de la prochaine attaque.',f:async p=>{p.vip=true;renderHUD()}},
@@ -683,7 +684,7 @@ const LUCKY=[
   {i:'🎁',t:'Un objet gratuit',f:async p=>giveItem(p)},
   {i:'💸',t:'Chacun te donne 2 canards',f:async p=>{for(const o of others(p))p.ducks+=lose(o,2,true);SFX.coin();renderHUD()}},
   {i:'👟',t:'Avance de 3 cases',f:async p=>{await moveSteps(p,3);await land(p)}},
-  {i:'🍻',t:'Choisis qui boit 3 gorgées',f:async p=>{const t=await chooseTarget(p,'Qui boit 3 gorgées ?',false);if(t){SFX.drink();toast(`🍻 ${t.nick} boit 3 gorgées`,t.color)}}},
+  {i:'🍻',t:'Choisis qui boit 3 gorgées',f:async p=>{const t=await chooseTarget(p,'Qui boit 3 gorgées ?',false);if(t){SFX.drink();await info('🍻',`${esc(t.nick)} boit 3 gorgées`,'Santé !',t.color)}}},
 ];
 
 /* ---------- État ---------- */
@@ -785,9 +786,10 @@ const DECO=[
   ['vega',1320,130,340],['bar',1885,262,200],['dome',300,262,275],
   ['banque',860,612,180],['belle',1640,612,300],['ruche',338,826,235],
   ['merch',1580,990,180],['club',1350,1142,320],['grande',990,1152,450],
-  ['camping',1922,1262,225],['table1',360,1000,150],['table2',1080,820,140],['table3',1400,320,150],['table2',900,320,140,1],['table4',540,770,165],['table5',1400,920,160],['table4',560,100,150],['table5',1940,420,140,1],['table1',400,480,140,1],['foodb',611,1106,150],['food',1775,860,135],['biere',700,404,118],['glaces',1567,139,128],['raclette',1158,634,150],['wc',782,78,150,0,'jb-sph-1'],['inf',1640,820,150],['gorille',185,400,90,1],['gorille',1140,440,90],['pipe',470,1112,82],['pipe',1535,300,82,1]];
+  ['camping',1922,1262,225],['table1',360,1000,150],['table2',1080,820,140],['table3',1400,320,150],['table2',900,320,140,1],['table4',540,770,165],['table5',1400,920,160],['table4',560,100,150],['table5',1960,330,140,1],['table1',400,480,140,1],['foodb',611,1106,150],['food',1775,860,135],['biere',700,404,118],['glaces',1567,139,128],['raclette',1158,634,150],['wc',782,78,150,0,'jb-sph-1'],['inf',1640,820,150],['gorille',185,400,90,1],['gorille',1140,440,90],['pipe',470,1112,82],['pipe',1535,300,82,1]];
 DECO.forEach(d=>d[1]=sx(d[1]));
 {const n=N['jb-hub-3'];if(n)DECO.push(['roue',n.x-125,n.y+140,125,0,'jb-hub-3'])}
+{const n=N['vega-belle-4'];if(n)DECO.push(['roue',n.x+150,n.y+105,125,0,'vega-belle-4'])}
 {const d=DECO.find(x=>x[0]==='pipe'&&x[2]===300),n=N['vega-belle-0'];if(d&&n){d[1]=n.x;d[2]=n.y-44;d[5]='vega-belle-0'}}
 {const d=DECO.find(x=>x[0]==='inf'),n=N['hub-belle-2'];if(d&&n){d[1]=n.x;d[2]=n.y-42;d[5]='hub-belle-2'}}
 function decoBox(d){const [k,cx,by,w]=d,[iw,ih]=DECO_ART[k][1],h=w*ih/iw;return{x:cx-w/2,y:by-h,w,h}}
@@ -1202,7 +1204,7 @@ async function playTurn(p){
       await actionBar(p,[{label:'↩️ Revenir au choix',value:1,cls:'primary'}],`<b style="color:${p.color}">${esc(p.nick)}</b> regarde la carte : ${marks.length>1?'les cases qui brillent montrent où tu peux arriver':'la case qui brille montre où tu arrives'} avec ${total}.`);
       highlight([]);await camOn(p,450);
     }
-    if(v==='pot'){p.powerUsed=true;SFX.drink();toast('🧪 Les deux autres boivent 1 gorgée',p.color);renderHUD();total=await rollDice(p,dice)}
+    if(v==='pot'){p.powerUsed=true;SFX.drink();await info('🧪','Potion de génépi',`${others(p).map(o=>esc(o.nick)).join(' et ')} boivent 1 gorgée chacun.`,p.color);renderHUD();total=await rollDice(p,dice)}
   }
   await moveSteps(p,total);
   await land(p);
@@ -1272,10 +1274,10 @@ async function moveSteps(p,n){
     else if(node.t.startsWith('shop:')&&!last)await shop(p,node.t.slice(5),true);
   }
 }
-async function braceletShow(p,k){
+async function braceletShow(p,k,g=0){
   const s=SC[k],el=$('#brshow');el.style.setProperty('--bc',s.color);el.style.opacity='1';
   let sp='';for(let i=0;i<14;i++)sp+=`<i class="sparkle" style="left:${8+Math.random()*84}%;top:${8+Math.random()*84}%;animation-delay:-${(Math.random()*1.4).toFixed(2)}s"></i>`;
-  el.innerHTML=`<div class="rays"></div>${sp}<div class="bx"><img class="bimg" src="${BR_ART[k][0]}" alt=""><small>${esc(p.nick)} obtient le bracelet</small><b>${s.name}</b><button class="btn primary brok">Ok</button></div>`;
+  el.innerHTML=`<div class="rays"></div>${sp}<div class="bx"><img class="bimg" src="${BR_ART[k][0]}" alt=""><small>${esc(p.nick)} obtient le bracelet</small><b>${s.name}</b>${g?`<div class="brdrink">🍺 ${esc(p.nick)} boit ${g} gorgée${g>1?'s':''} pour entrer</div><button class="btn primary drinkbtn brok">🍻 C'est bu !</button>`:'<button class="btn primary brok">Ok</button>'}</div>`;
   el.hidden=false;SFX.fanfare();setTimeout(()=>{[784,988,1175,1568].forEach((f,i)=>tone(f,.18,'triangle',.06,i*.09))},500);
   el.style.pointerEvents='auto';
   await new Promise(r=>el.querySelector('.brok').onclick=r);
@@ -1298,9 +1300,8 @@ async function passScene(p,node,{landing=false,free=false}={}){
     body:`${landing&&!free?`<div class="sfbig" style="font-size:clamp(34px,5vw,54px)"><s style="opacity:.45;font-size:.6em">${s.c}</s> ${cost} ${DUCK}</div>`:''}<p>Pour entrer, il faut <b>${cost} ${DUCK}</b> et <b>${s.g} gorgée${s.g>1?'s':''}</b>.${landing&&!free?` <b style="color:var(--good)">Tu t'arrêtes pile devant : −3 canards !</b>`:` <small>(${s.c-3} ${DUCK} si tu t'arrêtes pile dessus)</small>`}${free?' Le passe bénévole t\'évite de payer.':''}</p><p><small>Tu as ${p.ducks} ${DUCK}. En fin de partie, chaque bracelet vaut ${BR_VAL} ${DUCK}, et les 6 rapportent ${BR_BONUS} ${DUCK} de bonus.</small></p>`,
     choices:[{label:`Acheter : ${cost} ${DUCK} + ${s.g} 🍺`,value:true,cls:'primary',disabled:p.ducks<cost},{label:p.ducks<cost?'Pas assez de canards':'Passer mon chemin',value:false,cls:'ghost'}]});
   if(!v)return;
-  p.ducks-=cost;renderHUD();await braceletShow(p,k);p.bracelets.push(k);renderHUD();
+  p.ducks-=cost;renderHUD();SFX.drink();await braceletShow(p,k,s.g);p.bracelets.push(k);renderHUD();
   const slot=$(`#br-${p.id}-${k}`);if(slot)slot.classList.add('pop');
-  SFX.drink();toast(`🍺 ${esc(p.nick)} boit ${s.g} gorgée${s.g>1?'s':''} pour entrer à ${s.name}`,s.color);
   if(p.bracelets.length===6){banner('6 bracelets !',s.color);await sleep(900)}
   await sleep(400);
 }
@@ -1427,7 +1428,7 @@ async function luckySpin(p){
 async function secu(p){
   if(p.vip){p.vip=false;renderHUD();await info('🎫','Contrôle sécu','Ton bracelet VIP te fait passer sans fouille. Il est maintenant utilisé.','#39414f');return}
   const v=await ask({icon:'👮',title:'Contrôle sécu',body:'Les agents ont trouvé ta flasque de génépi. Comment tu t\'en sors ?',color:'#8a94a8',choices:[{label:`Payer l'amende : 5 ${DUCK}`,value:'pay',disabled:p.ducks<5},{label:'Boire 3 gorgées de la honte',value:'drink',cls:'primary'}]});
-  if(v==='pay')lose(p,5);else{SFX.drink();toast(`👮 ${esc(p.nick)} boit 3 gorgées`,'#8a94a8')}
+  if(v==='pay')lose(p,5);else{SFX.drink();await info('👮',`${esc(p.nick)} boit 3 gorgées`,'Les agents te laissent filer… après 3 gorgées.','#8a94a8')}
 }
 async function aspiratorShift(p){
   const sc=await mgGobelets([p],15);
