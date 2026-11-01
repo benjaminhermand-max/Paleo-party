@@ -125,6 +125,22 @@ button:focus-visible{outline:3px solid var(--duck);outline-offset:2px}
 .scard .fullimg{height:210px;max-width:100%;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.5))}
 .fcard .fullimg{height:200px;object-fit:contain}
 #app,#modal,#mg,#dice,#splash,#brshow{touch-action:none}
+#master{position:fixed;inset:0;z-index:260;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle,color-mix(in srgb,var(--pc) 45%,#1a0f2e),#05030c 70%);animation:fadein .4s}
+#master.out{opacity:0;transition:opacity .4s}
+#master .rays{position:absolute;width:170vmax;height:170vmax;left:50%;top:50%;margin:-85vmax 0 0 -85vmax;background:repeating-conic-gradient(rgba(255,210,63,.35) 0 6deg,transparent 6deg 15deg);animation:spin 12s linear infinite}
+.mcf{position:absolute;top:-20px;width:10px;height:16px;border-radius:2px;animation:mfall linear infinite}
+@keyframes mfall{to{transform:translateY(110vh) rotate(720deg)}}
+@keyframes fadein{from{opacity:0}}
+.morb{position:absolute;left:50%;top:50%;width:0;height:0;animation:spin 14s linear infinite}
+.morb img{position:absolute;width:min(160px,18vw);left:calc(min(160px,18vw)/-2);top:-40px;transform:rotate(var(--a)) translateY(calc(min(330px,38vmin)*-1)) rotate(calc(var(--a)*-1));filter:drop-shadow(0 0 16px rgba(255,210,63,.8))}
+.mbox{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;max-width:min(560px,80vw);animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+.mimg{height:min(250px,30vh);filter:drop-shadow(0 0 30px var(--pc))}
+.mcrown{font-size:64px;margin-top:-30px;animation:bounce 1s ease-in-out infinite alternate}
+@keyframes bounce{to{transform:translateY(-10px) rotate(8deg)}}
+.mbox small{letter-spacing:.15em;text-transform:uppercase;color:#fff;opacity:.85}
+.mbox>b{font-family:var(--display);font-weight:400;font-size:clamp(40px,7vw,80px);color:var(--pc);text-shadow:0 4px 0 #000,0 0 30px var(--pc);line-height:1}
+.mtitle{font-family:var(--display);font-size:clamp(26px,4vw,44px);color:#ffd23f;text-shadow:0 3px 0 #000,0 0 20px #ffd23f}
+.mbox p{font-size:clamp(16px,2vw,21px);color:#fff;background:rgba(0,0,0,.45);border-radius:16px;padding:10px 16px;line-height:1.45}
 #brshow .brdrink{font-size:clamp(18px,2.4vw,26px);font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:999px;padding:6px 18px;animation:fadeup .5s .8s both}
 #brshow .brok{margin-top:10px;font-size:clamp(18px,2.2vw,24px);padding:12px 44px;animation:fadeup .5s 1s both}
 #splash .spnext{margin-top:18px;animation:fadeup .5s .6s both}
@@ -747,7 +763,7 @@ function renderHUD(){
     if(p.items.length)meta.push(p.items.map(k=>itemIcon(k,24)).join(''));
     if(p.vip)meta.push(itemIcon('vip',24));if(p.slow)meta.push('🚧');if(p.skip)meta.push(p.skip==='inf'?'🚑':'🚽');if(p.water)meta.push('💧');
     meta.push(p.powerUsed?'⚡ utilisé':'⚡ dispo');
-    h+=`<div class="pcard${S.cur===p.id?' active':''}" data-pid="${p.id}" style="--pc:${p.color}"><div class="prank r${rk[p.id]}" title="${scoreOf(p)} points">${MEDAL[rk[p.id]]}<small>${RKN[rk[p.id]]}</small></div>${avatarHTML(p,46)}<div class="pinfo"><div class="pname"><span class="pnn">${esc(p.nick)}</span><span class="ppts" title="Canards + bracelets">${scoreOf(p)} pts</span></div><div class="pducks">${DUCK} ${p.ducks}</div><div class="brs">${brs}</div></div><div class="pmeta">${meta.join(' ')}</div></div>`;
+    h+=`<div class="pcard${S.cur===p.id?' active':''}" data-pid="${p.id}" style="--pc:${p.color}"><div class="prank r${rk[p.id]}" title="${scoreOf(p)} points">${MEDAL[rk[p.id]]}<small>${RKN[rk[p.id]]}</small></div>${avatarHTML(p,46)}<div class="pinfo"><div class="pname"><span class="pnn">${p.master?'👑 Maître ':''}${esc(p.nick)}</span><span class="ppts" title="Canards + bracelets">${scoreOf(p)} pts</span></div><div class="pducks">${DUCK} ${p.ducks}</div><div class="brs">${brs}</div></div><div class="pmeta">${meta.join(' ')}</div></div>`;
   }
   h+=`<div class="tools"><button class="iconbtn${overview?' on':''}" id="bMap" aria-label="Vue d'ensemble">🗺️</button><button class="iconbtn" id="bSound" aria-label="Son">${muted?'🔇':'🔊'}</button><button class="iconbtn" id="bMenu" aria-label="Menu" style="grid-column:span 2">☰</button></div>`;
   $('#hud').innerHTML=h;
@@ -1274,6 +1290,20 @@ async function moveSteps(p,n){
     else if(node.t.startsWith('shop:')&&!last)await shop(p,node.t.slice(5),true);
   }
 }
+async function sixBracelets(p){
+  if(p.master)return;p.master=true;save();renderHUD();
+  const others=S.players.filter(x=>x!==p),f=fullOf(p);
+  const w=document.createElement('div');w.id='master';w.style.setProperty('--pc',p.color);
+  let conf='';for(let i=0;i<70;i++)conf+=`<i class="mcf" style="left:${Math.random()*100}%;animation-delay:${(Math.random()*2.5).toFixed(2)}s;animation-duration:${(2.5+Math.random()*2).toFixed(2)}s;background:${pick(['#ffd23f','#ff4fd8','#7fe8ff','#5fdc7a','#ff9a3c','#fff'])}"></i>`;
+  w.innerHTML=`<div class="rays"></div>${conf}<div class="morb">${SCENE_ORDER.map((k,i)=>`<img src="${BR_ART[k][0]}" alt="" style="--a:${i*60}deg">`).join('')}</div>
+    <div class="mbox">${f?`<img class="mimg" src="${f}" alt="">`:avatarHTML(p,140)}<div class="mcrown">👑</div>
+    <small>6 bracelets sur 6</small><b>${esc(p.nick)}</b><div class="mtitle">Maître du festival</div>
+    <p>+${BR_BONUS} ${DUCK} de bonus en fin de partie.<br>${others.map(o=>`<span style="color:${o.color}">${esc(o.nick)}</span>`).join(' et ')} doivent désormais l'appeler <b>« Maître »</b> jusqu'à la fin de la partie !</p>
+    <button class="btn primary drinkbtn" id="mok">🙇 Oui, Maître !</button></div>`;
+  document.body.appendChild(w);
+  SFX.fanfare();setTimeout(SFX.fanfare,600);setTimeout(SFX.fanfare,1200);[523,659,784,1046,1318].forEach((f,i)=>tone(f,.3,'triangle',.07,1.6+i*.15));
+  await new Promise(r=>$('#mok').onclick=r);w.classList.add('out');await sleep(400);w.remove();
+}
 async function braceletShow(p,k,g=0){
   const s=SC[k],el=$('#brshow');el.style.setProperty('--bc',s.color);el.style.opacity='1';
   let sp='';for(let i=0;i<14;i++)sp+=`<i class="sparkle" style="left:${8+Math.random()*84}%;top:${8+Math.random()*84}%;animation-delay:-${(Math.random()*1.4).toFixed(2)}s"></i>`;
@@ -1302,7 +1332,7 @@ async function passScene(p,node,{landing=false,free=false}={}){
   if(!v)return;
   p.ducks-=cost;renderHUD();SFX.drink();await braceletShow(p,k,s.g);p.bracelets.push(k);renderHUD();
   const slot=$(`#br-${p.id}-${k}`);if(slot)slot.classList.add('pop');
-  if(p.bracelets.length===6){banner('6 bracelets !',s.color);await sleep(900)}
+  if(p.bracelets.length===6)await sixBracelets(p);
   await sleep(400);
 }
 
@@ -1371,7 +1401,7 @@ const WHEEL=[
     if(!ks.length){toast(`${esc(t.nick)} n'a aucun bracelet à te donner : +5 canards`,p.color);gain(p,5);return}
     if(await vipBlock(t))return;
     const k=pick(ks);t.bracelets=t.bracelets.filter(x=>x!==k);renderHUD();
-    await braceletShow(p,k);p.bracelets.push(k);renderHUD();toast(`🎟️ ${esc(p.nick)} vole le bracelet ${SC[k].name} à ${esc(t.nick)}`,SC[k].color)}},
+    await braceletShow(p,k);p.bracelets.push(k);renderHUD();if(p.bracelets.length===6)await sixBracelets(p);toast(`🎟️ ${esc(p.nick)} vole le bracelet ${SC[k].name} à ${esc(t.nick)}`,SC[k].color)}},
   {t:'Vole 5 canards',c:'#ffd23f',f:async(p,t)=>{if(await vipBlock(t))return;gain(p,lose(t,5))}},
   {t:'Donne 5 canards',c:'#e23b4e',f:async(p,t)=>{if(p.vip){p.vip=false;renderHUD();toast('🎫 Le VIP te protège',p.color);return}gain(t,lose(p,5))}},
   {t:'Vole 10 canards',c:'#ff9a3c',f:async(p,t)=>{if(await vipBlock(t))return;gain(p,lose(t,10))}},
@@ -1381,7 +1411,7 @@ const WHEEL=[
     if(!ks.length){toast('Aucun bracelet à donner, ouf !',p.color);return}
     if(p.vip){p.vip=false;renderHUD();toast('🎫 Le VIP te protège',p.color);return}
     const k=pick(ks);p.bracelets=p.bracelets.filter(x=>x!==k);SFX.bad();renderHUD();
-    await braceletShow(t,k);t.bracelets.push(k);renderHUD();toast(`💔 ${esc(p.nick)} donne le bracelet ${SC[k].name} à ${esc(t.nick)}`,'var(--bad)')}},
+    await braceletShow(t,k);t.bracelets.push(k);renderHUD();if(t.bracelets.length===6)await sixBracelets(t);toast(`💔 ${esc(p.nick)} donne le bracelet ${SC[k].name} à ${esc(t.nick)}`,'var(--bad)')}},
   {t:'Il boit 3 gorgées',c:'#b04ad6',f:async(p,t)=>{SFX.drink();await info('🍻',`${esc(t.nick)} boit 3 gorgées`,'Santé !',t.color)}},
   {t:'Tu bois 3 gorgées',c:'#5fdc7a',f:async(p,t)=>{SFX.drink();await info('🍻',`${esc(p.nick)} boit 3 gorgées`,'Ça arrive aux meilleurs.',p.color)}},
 ];
