@@ -629,7 +629,7 @@ const SCENE_NODE={club:'club',grande:'grande',ruche:'ruche',dome:'dome',vega:'ve
 
 const DEF=[
   {id:'bizu',name:'Benjamin',nick:'Bizu',color:'#ff8a3d',emoji:'🎲',power:'Le créateur',pdesc:'Une fois (rechargeable aux bornes 🔋), choisis le mini-jeu de fin de tour. Si tu le gagnes, ta récompense est doublée.'},
-  {id:'benoit',name:'Benoît',nick:'Benoît XVI',color:'#f0dfb4',emoji:'👑',power:'Passe bénévole',pdesc:'Une fois (rechargeable aux bornes 🔋), le taulier file directement à la prochaine scène dont il n\'a pas le bracelet, et peut y acheter le bracelet (avec la réduction de 3 canards).'},
+  {id:'benoit',name:'Benoît',nick:'Benoît XVI',color:'#f0dfb4',emoji:'👑',power:'Passe-droit du taulier',pdesc:'Une fois (rechargeable aux bornes 🔋), avant ton lancer, échange ta place sur le plateau avec celle d\'un autre joueur. « C\'est mon festival ! »'},
   {id:'jeje',name:'Jéjé',nick:'Panoramix',color:'#7bd34a',emoji:'🧙',power:'Potion de génépi',pdesc:'Une fois (rechargeable aux bornes 🔋), après ton lancer, relance le dé. Les deux autres boivent une gorgée.'},
 ];
 const mgOK=k=>!MG[k].duelOnly&&!MG[k].irl&&(!MG[k].need||MG[k].need());
@@ -1537,13 +1537,15 @@ async function usePower(p){
     S.forced=g;S.bizuDouble=true;p.powerUsed=true;renderHUD();toast(`🎲 Bizu impose : ${MG[g].n}`,p.color);return null;
   }
   if(p.id==='benoit'){
-    const id=nearestMissing(p);
-    if(id==null){await info('👑','Rien à gagner','Tu as déjà tous les bracelets, garde ton passe pour plus tard.',p.color);return null}
-    const s=SC[N[id].t.slice(6)];
-    const ok=await ask({icon:'👑',title:'Passe bénévole',body:`Benoît XVI file directement à ${s.name} et peut y acheter le bracelet, avec la réduction de 3 canards. Ton tour s'arrête là.`,color:p.color,choices:[{label:'Y aller',value:true,cls:'primary'},{label:'Annuler',value:false,cls:'ghost'}]});
-    if(!ok)return null;
-    p.powerUsed=true;p.pos=id;p.prev=null;renderTokens();await camOn(p,600);
-    await passScene(p,N[id],{landing:true});return 'end';
+    const pool=others(p).filter(o=>o.pos!==p.pos);
+    if(!pool.length){await info('👑','Passe-droit du taulier','Tout le monde est déjà sur ta case : rien à échanger.',p.color);return null}
+    const t=await chooseTarget(p,'Passe-droit du taulier : avec qui échanges-tu ta place ?',true);
+    if(!t||t.pos===p.pos)return null;
+    p.powerUsed=true;SFX.fanfare();
+    const [a,b]=[p.pos,p.prev];p.pos=t.pos;p.prev=t.prev;t.pos=a;t.prev=b;renderTokens();renderHUD();save();
+    await camGo(viewFor((N[p.pos].x+N[t.pos].x)/2,(N[p.pos].y+N[t.pos].y)/2,Math.max(900,Math.abs(N[p.pos].x-N[t.pos].x)+400)),600);
+    await info('👑','Passe-droit du taulier',`« C'est mon festival ! » Benoît XVI prend la place de ${esc(t.nick)}, qui file à la sienne. Tu lances ensuite ton dé depuis ta nouvelle case.`,p.color);
+    await camOn(p,450);return null;
   }
   return null;
 }
@@ -2242,7 +2244,7 @@ function rules(){
   <p><b>Règle du 6 🥃 :</b> chaque 6 au dé, le joueur ajoute un ingrédient de son choix dans un shooter posé sur la table. Au bout de 3 ingrédients, le shooter est plein : le prochain qui fait un 6 le boit cul sec, et on recommence. À la fin de la partie, s'il reste quelque chose dedans, le 3e le boit.</p><p><b>Un tour :</b> chacun lance le dé et avance. Après les trois joueurs, mini-jeu pour tout le monde (1er +6, 2e +3).</p><p><b>Roue de la fortune 🎡</b> (entre Véga et Belleville, et juste avant la Banque No Cash) : elle tourne deux fois. D'abord elle choisit un de tes deux adversaires, puis ce qui se passe avec lui : lui voler un bracelet ou des canards, échanger vos canards… ou lui donner un bracelet.</p><p><b>Mi-parcours :</b> les cases bleues passent à +5 et les rouges à −5. à la moitié de la partie, « C'est déjà bientôt la fin du festival ! » : 5 cases bleues deviennent rouges et 2 cases râteau deviennent des têtes de mort. Toutes les têtes de mort deviennent alors des shots préparés par les adversaires.</p><p><b>Têtes de mort :</b> la noire, c'est cul sec ; la violette, c'est un shot surprise préparé par les adversaires.</p><p><b>Règle du 6 :</b> chaque 6 sorti au dé permet de distribuer 6 gorgées.</p>
   <p><b>Le plateau</b> fait une grande boucle autour du festival. Trois carrefours (Terrasse, Village du Monde, Place de l'Envol) permettent de couper par le centre, plus vite mais en sautant des scènes. <b>Touche n'importe quelle case</b> pour voir son effet. Une case <b>Retour au camping</b>, après Belleville, ramène au camping pour recharger les batteries (+5 canards). Si tu t'arrêtes sur la case d'un autre joueur, c'est le <b>duel</b>. Deux <b>tuyaux</b> verts se répondent de part et d'autre du festival : s'arrêter sur l'un fait ressortir par l'autre. Aux <b>WC</b> et à l'<b>infirmerie</b>, on passe son tour suivant et on boit une gorgée.</p>
   <p><b>Trois boutiques</b>, deux objets chacune : la Banque No Cash (dés en plus), le Bar du Druide (bouchon, vol) et la Boutique Paléo (bracelet VIP, navette). On achète en passant devant.</p>
-  <p><b>Pouvoirs</b> (une fois, puis rechargeables sur les cases 🔋 Borne de recharge ou avec certains mystères) : Bizu choisit le mini-jeu du tour, Benoît XVI file à la prochaine scène qui lui manque, Panoramix relance son dé avec la potion de génépi.</p>
+  <p><b>Pouvoirs</b> (une fois, puis rechargeables sur les cases 🔋 Borne de recharge ou avec certains mystères) : Bizu choisit le mini-jeu du tour, Benoît XVI échange sa place avec un autre joueur, Panoramix relance son dé avec la potion de génépi.</p>
   <p><b>Mini-jeux :</b> quiz, lumière de scène, aspiration, gobelets, memory du crew, shi-fu-mi (avec vos mains), thème en chaîne, plus ou moins, dessine c'est gagné, le mot interdit, taupe Aspirator, chrono aveugle, qui est-ce ? du crew (en duel Benoît XVI contre Panoramix seulement), blind test (6 extraits Deezer, 4 en duel, celui qui buzze répond à voix haute ; s'il se trompe, les autres marquent ; il faut internet), le mime (chaque bonne réponse rapporte 2 canards au mimeur et à celui qui trouve), La Taupe (on lance ton vrai jeu La Taupe pour une manche) et défis IRL. Le tir à la corde ne se joue qu'en duel, et Qui est-ce ? seulement en duel entre Benoît XVI et Panoramix.</p>
   <p><b>Mini-jeux à buzzer :</b> la tablette est à plat. Bizu buzze à gauche, Benoît XVI à droite, Panoramix en bas.</p>
   <p><b>🗺️</b> en haut à droite affiche tout le plateau à tout moment. Pincez le plateau pour zoomer et glissez un doigt pour vous déplacer.</p>
