@@ -1597,7 +1597,8 @@ async function useItem(p){
 async function navette(p){
   const miss=SCENE_ORDER.filter(k=>!p.bracelets.includes(k));
   const list=miss.length?miss:SCENE_ORDER;
-  const k=await ask({icon:'🚌',title:'Navette',body:'Quelle scène ?',color:'#7fe8ff',choices:list.map(k=>({label:SC[k].name,value:k}))});
+  const k=await ask({plain:true,icon:'🚌',title:'Navette',body:`<p>Quelle scène ? Tu arrives pile dessus : <b>3 ${DUCK} de réduction</b> sur le bracelet.</p><p><small>Tu as ${p.ducks} ${DUCK}.</small></p>`,color:'#7fe8ff',
+    choices:list.map(k=>{const c=Math.max(0,SC[k].c-3),own=p.bracelets.includes(k);return {label:`${SC[k].name} · ${own?'déjà obtenu':`${c} ${DUCK} + ${SC[k].g} 🍺${c>p.ducks?' (trop cher)':''}`}`,value:k}})});
   p.pos=SCENE_NODE[k];p.prev=null;renderTokens();await camOn(p,600);
   await passScene(p,N[p.pos],{landing:true});
 }
