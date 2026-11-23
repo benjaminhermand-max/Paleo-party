@@ -858,9 +858,10 @@ function renderHUD(){
     meta.push(p.powerUsed?'⚡ utilisé':'⚡ dispo');
     h+=`<div class="pcard${S.cur===p.id?' active':''}" data-pid="${p.id}" style="--pc:${p.color}"><div class="prank r${rk[p.id]}" title="${scoreOf(p)} points">${MEDAL[rk[p.id]]}<small>${RKN[rk[p.id]]}</small></div>${avatarHTML(p,46)}<div class="pinfo"><div class="pname"><span class="pnn">${p.master?'👑 Maître ':''}${esc(p.nick)}</span><span class="ppts" title="Canards + bracelets">${scoreOf(p)} pts</span></div><div class="pducks">${DUCK} ${p.ducks}</div><div class="brs">${brs}</div></div><div class="pmeta">${meta.join(' ')}</div></div>`;
   }
-  h+=`<div class="tools"><button class="iconbtn${overview?' on':''}" id="bMap" aria-label="Vue d'ensemble">🗺️</button><button class="iconbtn" id="bSound" aria-label="Son">${muted?'🔇':'🔊'}</button><button class="iconbtn" id="bMenu" aria-label="Menu" style="grid-column:span 2">☰</button></div>`;
+  h+=`<div class="tools"><button class="iconbtn${overview?' on':''}" id="bMap" aria-label="Vue d'ensemble">🗺️</button><button class="iconbtn" id="bSound" aria-label="Son">${muted?'🔇':'🔊'}</button><button class="iconbtn${RADIO.on?' on':''}" id="bRadio" aria-label="Radio Paléo">📻</button><button class="iconbtn" id="bMenu" aria-label="Menu" style="grid-column:span 2">☰</button></div>`;
   $('#hud').innerHTML=h;
   $('#hud').querySelectorAll('.pcard').forEach(c=>c.onclick=()=>playerDetail(S.players.find(p=>p.id===c.dataset.pid)));
+  {const br=$('#bRadio');if(br)br.onclick=()=>{RADIO.on=!RADIO.on;store('paleo-radio',RADIO.on);if(!RADIO.on&&RADIO.au)RADIO.au.pause();toast(RADIO.on?'📻 Radio Paléo allumée':'📻 Radio Paléo coupée','#ff4fd8');renderHUD()}}
   $('#bSound').onclick=()=>{muted=!muted;store('paleo-muted',muted);if(muted&&hymn)hymn.pause();renderHUD()};
   $('#bMenu').onclick=menu;
   $('#bMap').onclick=()=>{overview=!overview;renderHUD();if(overview)camAll(600);else{const p=S.players.find(x=>x.id===S.cur);if(p)camOn(p,600)}};
@@ -1760,6 +1761,25 @@ function ready(stage,title,text){
 const BLIND_HIT=[['The Cure','Boys Don\'t Cry'],['Gorillaz','Feel Good Inc.'],['Lorde','Royals'],['Katy Perry','Roar'],['Justice','D.A.N.C.E.'],['Simple Minds','Don\'t You (Forget About Me)'],['Texas','Say What You Want'],['Sex Pistols','Anarchy in the U.K.'],['Queens of the Stone Age','No One Knows'],['David Guetta','Titanium'],['Will Smith','Men in Black'],['Sean Paul','Get Busy'],['CHIC','Le Freak'],['Patti Smith','Because the Night'],['Sam Smith','Stay With Me'],['Mika','Relax, Take It Easy'],['Calogero','En apesanteur'],['Christophe Maé','Il est où le bonheur'],['Major Lazer','Lean On'],['Gims','Sapés comme jamais'],['IAM','Je danse le mia'],['Stromae','Alors on danse'],['Kiss','I Was Made for Lovin\' You'],['Sting','Englishman in New York'],['Rag\'n\'Bone Man','Human'],['DJ Snake','Turn Down for What'],['Angèle','Balance ton quoi'],['Tryo','L\'hymne de nos campagnes'],['Francis Cabrel','Je l\'aime à mourir'],['Orelsan','La terre est ronde'],['Véronique Sanson','Amoureuse'],['Zaho de Sagazan','La symphonie des éclairs'],['Hoshi','Ta marinière'],['Maxime Le Forestier','San Francisco'],['Juliette Armanet','Le dernier jour du disco'],['Burna Boy','Last Last'],['Skunk Anansie','Hedonism (Just Because You Feel Good)'],['Royal Blood','Figure It Out']];
 const BLIND_RARE=[['The Cure','A Forest'],['Gorillaz','On Melancholy Hill'],['Lorde','Ribs'],['Justice','Genesis'],['Simple Minds','Alive and Kicking'],['Skunk Anansie','Weak'],['Texas','Black Eyed Boy'],['Queens of the Stone Age','Make It Wit Chu'],['Sean Paul','We Be Burnin\''],['Patti Smith','Gloria'],['Paul Kalkbrenner','Sky and Sand'],['Aurora','Runaway'],['The Blaze','Territory'],['Khruangbin','Maria También'],['Royal Blood','Little Monster'],['Eddy de Pretto','Kid'],['Olivia Ruiz','J\'traîne des pieds'],['Goran Bregović','Kalashnikov'],['Luidji','Pour deux âmes solitaires'],['Gaël Faye','Petit pays'],['Feu! Chatterton','La Malinche'],['Roméo Elvis','Malade'],['Zaho de Sagazan','Aspiration'],['Juliette Armanet','L\'amour en solitaire'],['Sting','Shape of My Heart'],['Mika','Lollipop'],['Calogero','Un jour au mauvais endroit'],['Christophe Maé','Belle demoiselle'],['IAM','Petit frère'],['Stromae','Ta fête'],['Angèle','La loi de Murphy'],['Tryo','Serre-moi'],['Grand Corps Malade','Saint-Denis'],['Ásgeir','King and Cross'],['Major Lazer','Watch Out for This (Bumaye)'],['Burna Boy','Ye'],['Rag\'n\'Bone Man','Skin'],['The Young Gods','Skinflowers'],['Buraka Som Sistema','Kalemba (Wegue Wegue)']];
 const BLIND=[...BLIND_HIT,...BLIND_RARE];
+/* ---------- Radio Paléo : extraits Deezer en fond pendant la partie ---------- */
+const RADIO={on:load('paleo-radio')!==false,au:null,deck:[],played:new Set(),busy:false,want:false,cur:null};
+function radioOK(){return RADIO.on&&!muted&&navigator.onLine!==false&&S&&!S.free&&S.phase!=='end'&&$('#title').hidden&&$('#mg').hidden&&!$('#halfvid')&&!$('#taupeapp')}
+async function radioNext(){
+  if(RADIO.busy)return;RADIO.busy=true;
+  try{for(let i=0;i<6;i++){if(!RADIO.deck.length)RADIO.deck=shuffle(BLIND_HIT.filter(x=>!RADIO.played.has(x[1])));if(!RADIO.deck.length){RADIO.played.clear();continue}
+    const tk=await dzTrack(RADIO.deck.pop());if(!tk)continue;
+    RADIO.played.add(tk.t);RADIO.cur=tk;
+    if(!RADIO.au){RADIO.au=new Audio();RADIO.au.volume=.3;RADIO.au.onended=()=>{RADIO.cur=null;radioTick(true)}}
+    RADIO.au.src=tk.url;if(radioOK())RADIO.au.play().then(()=>toast(`📻 Radio Paléo : ${esc(tk.a)} · ${esc(tk.t)}`,'#ff4fd8')).catch(()=>{});break}}catch(e){}
+  RADIO.busy=false;
+}
+function radioTick(next){
+  if(!radioOK()){if(RADIO.au&&!RADIO.au.paused)RADIO.au.pause();return}
+  if(hymn&&!hymn.paused)hymn.pause();
+  if(next||!RADIO.au||!RADIO.cur){radioNext();return}
+  if(RADIO.au.paused)RADIO.au.play().catch(()=>{});
+}
+setInterval(()=>radioTick(false),700);
 const PALEO_YEAR={'The Cure':2026,'Gorillaz':2026,'Lorde':2026,'Katy Perry':2026,'The Young Gods':2026,'Buraka Som Sistema':2026,'Ásgeir':2026,'Justice':2025,'Simple Minds':2025,'Skunk Anansie':2025,'Texas':2025,'Sex Pistols':2025,'Queens of the Stone Age':2025,'David Guetta':2025,'Will Smith':2025,'Sean Paul':2024,'Patti Smith':2024,'CHIC':2024,'Paul Kalkbrenner':2024,'Véronique Sanson':2024,'Sam Smith':2024,'Aurora':2024,'Zaho de Sagazan':2024,'The Blaze':2024,'Mika':2024,'Calogero':2024,'Eddy de Pretto':2024,'Hoshi':2024,'Christophe Maé':2024,'Olivia Ruiz':2024,'Royal Blood':2024,'Khruangbin':2024,'Major Lazer':2024,'Burna Boy':2024,'Gims':2024,'IAM':2024,'Luidji':2024,'Goran Bregović':2024,'Stromae':2022,'Kiss':2022,'Sting':2022,'Rag\'n\'Bone Man':2022,'DJ Snake':2022,'Angèle':2022,'Roméo Elvis':2022,'Juliette Armanet':2022,'Grand Corps Malade':2022,'Tryo':2022,'Gaël Faye':2022,'Feu! Chatterton':2022,'Francis Cabrel':2022,'Maxime Le Forestier':2022,'Orelsan':2022};
 
 let blindDeck={hit:[],rare:[]};
@@ -1781,7 +1801,7 @@ async function mgBlind(players,{duel}={}){
   stage.innerHTML=`<div class="q">🎧 Préparation des morceaux…</div><div class="hint">Connexion à Deezer</div>`;
   const tracks=[];
   for(const [tier,pool] of [['hit',BLIND_HIT],['rare',BLIND_RARE]]){let got=0,tries=0;
-    while(got<n/2&&tries<n*3){tries++;if(!blindDeck[tier].length)blindDeck[tier]=shuffle(pool);const tk=await dzTrack(blindDeck[tier].pop());if(tk){tk.tier=tier;tracks.push(tk);got++}}}
+    while(got<n/2&&tries<n*3){tries++;if(!blindDeck[tier].length)blindDeck[tier]=shuffle(pool.filter(x=>!RADIO.played.has(x[1])));if(!blindDeck[tier].length)blindDeck[tier]=shuffle(pool);const tk=await dzTrack(blindDeck[tier].pop());if(tk){tk.tier=tier;tracks.push(tk);got++}}}
   shuffle(tracks);for(let k=tracks.length-1;k>0;k--){const m=Math.floor(Math.random()*(k+1));[tracks[k],tracks[m]]=[tracks[m],tracks[k]]}
   if(!tracks.length){stage.innerHTML=`<div class="q">😕 Impossible de joindre Deezer</div><div class="hint">Vérifie la connexion internet de la tablette. Le blind test est annulé pour ce tour.</div><button class="btn primary" id="nx">Continuer</button>`;await new Promise(r=>$('#nx').onclick=r);mgClose();return sc}
   const bz=makeBuzzers(players,p=>handler&&handler(p),players.length===2);
