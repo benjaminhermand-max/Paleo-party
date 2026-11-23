@@ -313,6 +313,65 @@ body.mgopen{background:#0b1020}
 .mcard:not(.up){background:var(--logo) center/72% no-repeat,linear-gradient(160deg,#1f3a24,#0d1a12);border-color:#3f8a3a}
 #backask{position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:rgba(5,8,18,.8);padding:16px}
 #backask .card{max-width:520px}
+
+/* ===== Accueil « Festival vivant » ===== */
+#title.home{background:transparent;padding:0;overflow:hidden}
+.hm{position:absolute;inset:0;overflow:hidden;color:#fff;backdrop-filter:blur(6px) brightness(.42) saturate(1.3);-webkit-backdrop-filter:blur(6px) brightness(.42) saturate(1.3);background:radial-gradient(ellipse at 50% 35%,rgba(120,40,200,.35),rgba(5,6,20,.88) 72%)}
+.hmbeam{position:absolute;bottom:-10%;width:clamp(110px,14vw,190px);height:140%;transform-origin:50% 100%;clip-path:polygon(45% 100%,55% 100%,100% 0,0 0);filter:blur(3px);mix-blend-mode:screen;transform:rotate(var(--r));animation:hmsweep 6s ease-in-out infinite alternate;pointer-events:none}
+@keyframes hmsweep{to{transform:rotate(calc(var(--r) * -1))}}
+.hmcf{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;opacity:.85;animation:hmfall linear infinite;pointer-events:none}
+@keyframes hmfall{to{transform:translateY(110vh) rotate(540deg)}}
+.hmfs{position:absolute;top:max(14px,env(safe-area-inset-top));right:16px;width:46px;height:46px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:20px;z-index:3;cursor:pointer}
+.hmtop{position:absolute;top:max(3vh,14px);left:0;right:0;text-align:center;pointer-events:none}
+.hmtop img{height:clamp(50px,8vh,74px);filter:drop-shadow(0 0 14px #7bd34a);animation:hmglow 3s ease-in-out infinite}
+@keyframes hmglow{50%{filter:drop-shadow(0 0 26px #7bd34a)}}
+.hmtitle{font-family:var(--display);font-size:clamp(46px,8.5vw,104px);line-height:.95;color:#ffd23f;text-shadow:0 2px 0 #fff3b0,0 6px 0 #e08a00,0 10px 0 #a65d00,0 16px 24px rgba(0,0,0,.7),0 0 40px rgba(255,210,63,.6);letter-spacing:2px;animation:hmbreath 3.5s ease-in-out infinite}
+@keyframes hmbreath{50%{transform:scale(1.03)}}
+.hmsub{font-family:var(--display);font-size:clamp(13px,1.8vw,21px);letter-spacing:.35em;color:#ff7bd8;text-shadow:0 0 12px #ff4fd8;margin-top:8px}
+.hmplay{position:absolute;left:50%;top:calc(max(3vh,14px) + clamp(170px,27vh,250px));transform:translateX(-50%);width:clamp(140px,21vh,180px);aspect-ratio:1;border-radius:50%;border:6px solid #fff;background:radial-gradient(circle at 35% 30%,#fff2a8,#ffd23f 45%,#f09000);box-shadow:0 12px 0 #9a5c00,0 0 0 14px rgba(255,210,63,.25),0 0 60px #ffd23f;color:#3a1a00;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;z-index:2;animation:hmpulse 1.6s ease-in-out infinite}
+.hmplay span{font-family:var(--display);font-size:clamp(28px,4.5vh,40px)}
+.hmplay small{font-weight:800;font-size:12px;max-width:80%;line-height:1.1;margin-top:2px}
+.hmplay:active{transform:translateX(-50%) translateY(9px);box-shadow:0 3px 0 #9a5c00,0 0 0 14px rgba(255,210,63,.25),0 0 60px #ffd23f}
+@keyframes hmpulse{50%{box-shadow:0 12px 0 #9a5c00,0 0 0 24px rgba(255,210,63,.15),0 0 90px #ffd23f}}
+.hmsils{position:absolute;bottom:calc(clamp(80px,13vh,110px) + 10px);left:0;right:0;display:flex;justify-content:center;gap:clamp(18px,4vw,44px);align-items:flex-end;pointer-events:none}
+.hmsil{position:relative;height:clamp(120px,24vh,210px);animation:hmsway 2.8s ease-in-out infinite;transform-origin:50% 100%}
+.hmsil img{height:100%;filter:brightness(0) drop-shadow(0 0 2px rgba(255,255,255,.6)) drop-shadow(0 0 18px rgba(255,79,216,.7))}
+.hmsil span{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);font-family:var(--display);font-size:clamp(36px,6vh,64px);color:#ffd23f;text-shadow:0 4px 0 #a65d00,0 0 20px #ffd23f}
+@keyframes hmsway{50%{transform:rotate(3deg) translateY(-6px)}}
+.hmrow{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:2}
+.hmcard{width:clamp(96px,13vw,150px);padding:10px;border-radius:18px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.3);backdrop-filter:blur(10px);text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.4);color:#fff;font:inherit;cursor:pointer;transition:transform .12s}
+.hmcard:active{transform:scale(.94)}.hmcard b{display:block;font-size:clamp(22px,3.4vh,30px)}.hmcard span{font-weight:800;font-size:clamp(12px,1.6vw,15px)}
+/* ===== Sous-menus « tuiles » ===== */
+#title.sub{background:radial-gradient(circle at 50% 0%,#7b3fd6,#2a1060 45%,#0c0626 90%)}
+#title.sub::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(2px 2px at 10% 20%,#fff,transparent),radial-gradient(2px 2px at 30% 60%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 30%,#fff,transparent),radial-gradient(2px 2px at 85% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 50% 85%,#fff,transparent),radial-gradient(1.5px 1.5px at 20% 80%,#fff,transparent),radial-gradient(2px 2px at 60% 10%,#fff,transparent),radial-gradient(1.5px 1.5px at 92% 15%,#fff,transparent);opacity:.7}
+.sbwrap{position:relative}
+.menu.sbwrap{justify-content:flex-start;gap:clamp(18px,4vh,40px)}
+.sbhead{width:100%;display:flex;align-items:center;gap:14px}
+.sbhead img{height:54px}.sbtitle{flex:1;font-family:var(--display);font-size:clamp(28px,4.5vw,48px);color:#fff;text-shadow:0 4px 0 #ff4fd8,0 7px 0 #8a1f7a,0 12px 18px rgba(0,0,0,.5)}
+.sbbtn{width:52px;height:52px;border-radius:50%;border:4px solid #fff;background:linear-gradient(#a77bff,#6a3fd9);color:#fff;font-size:22px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.35);flex:none}
+.sbpanel{width:100%;display:flex;flex-direction:column;gap:18px;align-items:center}
+.sbh{margin:0;font-family:var(--display);font-weight:400;color:#ffd23f;font-size:22px}
+.tgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;width:min(820px,100%)}
+.tgrid2{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;width:100%}
+.ttile{position:relative;border:0;border-radius:26px;padding:12px;color:#fff;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(160deg,var(--ta),var(--tb));box-shadow:0 10px 0 rgba(0,0,0,.35),inset 0 3px 0 rgba(255,255,255,.45),0 0 0 5px #fff;transition:transform .12s;min-height:130px}
+.ttile:nth-child(odd){transform:rotate(-1.2deg)}.ttile:nth-child(even){transform:rotate(1.2deg)}
+.ttile:active{transform:scale(.95)!important}
+.ttile b{font-family:var(--display);font-weight:400;font-size:clamp(18px,2.4vw,26px);text-shadow:0 3px 0 rgba(0,0,0,.35)}
+.ttile small{font-weight:800;opacity:.9}.ttile .ti{font-size:40px}
+.ttile.t0{--ta:#7fd8ff;--tb:#2f7fd9}.ttile.t1{--ta:#ffc95c;--tb:#e08a00}.ttile.t2{--ta:#c59cff;--tb:#7a4fd9}
+.ttile.on{box-shadow:0 10px 0 rgba(0,0,0,.35),inset 0 3px 0 rgba(255,255,255,.45),0 0 0 6px #ffd23f,0 0 30px #ffd23f}
+.ttile.on::after{content:'✔';position:absolute;top:-12px;right:-12px;width:36px;height:36px;border-radius:50%;background:#ffd23f;color:#3a1a00;display:grid;place-items:center;font-weight:900;box-shadow:0 3px 0 #9a5c00}
+.ttile.big{width:min(360px,42vw);min-height:min(280px,34vh)}
+.ttile.tred{--ta:#ff6b7a;--tb:#d9304a}.ttile.tgreen{--ta:#5fe07a;--tb:#21a03f}
+.timg{flex:1;width:100%;border-radius:18px;background:rgba(255,255,255,.18);display:grid;place-items:center;overflow:hidden;min-height:110px}
+.timg img{max-width:88%;max-height:min(170px,22vh);filter:drop-shadow(0 8px 10px rgba(0,0,0,.4))}
+#title.sub .fcardg{border:0;border-radius:22px;box-shadow:0 8px 0 rgba(0,0,0,.35),inset 0 3px 0 rgba(255,255,255,.4),0 0 0 4px #fff;background:linear-gradient(160deg,var(--ta,#ff6b7a),var(--tb,#d9304a));padding:14px 8px}
+#title.sub .fcardg:nth-child(5n+1){--ta:#ff6b7a;--tb:#d9304a}#title.sub .fcardg:nth-child(5n+2){--ta:#5fe07a;--tb:#21a03f}#title.sub .fcardg:nth-child(5n+3){--ta:#7fd8ff;--tb:#2f7fd9}#title.sub .fcardg:nth-child(5n+4){--ta:#ffc95c;--tb:#e08a00}#title.sub .fcardg:nth-child(5n){--ta:#c59cff;--tb:#7a4fd9}
+#title.sub .fcardg.irl{--ta:#d36bff;--tb:#8a2fc0}
+#title.sub .fcardg b{text-shadow:0 2px 0 rgba(0,0,0,.35)}#title.sub .fcardg small{opacity:.95;font-weight:700}
+#title.sub .fgrid{gap:16px;padding:6px}
+#title.sub .mpanel,#title.sub .scard{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);backdrop-filter:blur(8px)}
+@media (max-width:640px){.tgrid3{grid-template-columns:1fr}.ttile.big{width:100%}}
 .menu{max-width:1000px;min-height:100%;justify-content:space-between;gap:14px}
 .mhead{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .mhead .logo{font-size:clamp(36px,6.5vw,72px)}
@@ -1635,7 +1694,7 @@ async function finale(){
   const rows=S.players.map(p=>{const bon=p.bracelets.length*BR_VAL+(p.bracelets.length===6?BR_BONUS:0);return{p,bon,tot:p.ducks+bon}}).sort((a,b)=>b.tot-a.tot);
   if(S.shooter&&rows[2]){const l=rows[2].p;SFX.drink();await info(shooterIcon('drink'),`Le shooter de la honte pour ${esc(l.nick)} !`,`${esc(l.nick)} termine 3e et doit boire le shooter : <b>${S.shooter} ingrédient${S.shooter>1?'s':''}</b> ajouté${S.shooter>1?'s':''} pendant la partie. Cul sec !`,l.color)}
   SFX.fanfare();setTimeout(SFX.fanfare,700);
-  const t=$('#title');t.hidden=false;
+  const t=$('#title');t.hidden=false;t.className='';
   const ST=id=>(S.stats||{})[id]||{},g=(id,k)=>ST(id)[k]||0;
   const pod=[rows[1],rows[0],rows[2]].filter(Boolean),place=r=>rows.indexOf(r);
   const H=['62%','82%','46%'];
@@ -2308,23 +2367,26 @@ function titleScreen(view){
   const t=$('#title');t.hidden=false;
   let saved=load('paleo-save');
   if(saved&&(saved.v!==2||!saved.players||saved.players.some(p=>!N[p.pos]))){unstore('paleo-save');saved=null}
-  const head=(ttl)=>`<div class="mhead"><img class="tlogo sm" src="${LOGO}" alt="Logo Team Padre"><div class="logo">Paléo Party<span>Le jeu des Aspirators</span></div><div class="mbanner">${ttl}</div></div>`;
-  const foot=(txt,back)=>`<div class="mfoot">${back?'<button class="mback" id="mBack" aria-label="Retour">↩</button>':'<span></span>'}<span id="mdesc">${txt}</span><button class="mback" id="bFs" aria-label="Plein écran">⛶</button></div>`;
+  const head=(ttl)=>`<div class="sbhead"><button class="sbbtn" id="mBack" aria-label="Retour">↩</button><img src="${LOGO}" alt=""><div class="sbtitle">${ttl}</div><button class="sbbtn" id="bFs" aria-label="Plein écran">⛶</button></div>`;
+  const foot=()=>'';
   let body='';
   if(TVIEW==='main'){
-    body=head('Menu principal')+`<div class="mgridm">
-      <button class="mtile big red" id="tPlateau" data-d="Parcourez le festival à trois et finissez avec le plus de canards."><span class="mdeco">🎲 ❓ ♫ 🎟️ 🎲</span><b>Jeu de plateau</b></button>
-      <button class="mtile big green" id="bFree" data-d="Jouez aux mini-jeux de votre choix, sans plateau."><span class="mdeco">🥤 🕹️ 🃏 ✊ 🧹</span><b>Mini-jeux</b></button>
-      <button class="mtile purple" id="bRules" data-d="Toutes les règles du Paléo Party."><span class="mdeco">📖</span><b>Règles</b></button>
-      <button class="mtile purple" id="tExtras" data-d="Photos du Memory et hymne Aspirator."><span class="mdeco">🃏 🎵</span><b>Extras</b></button>
-      <button class="mtile purple" id="tSet" data-d="Changer les avatars des joueurs."><span class="mdeco">⚙️</span><b>Réglages</b></button>
-    </div>`+foot(saved?`Une partie est en cours (tour ${saved.round}/${saved.maxRound}) : Jeu de plateau pour la reprendre.`:'Choisissez un mode de jeu.');
+    if(!boardBuilt){const keep=S;try{S={players:[],mods:{},half:false,round:1,maxRound:12};buildBoard();setVB(fullView(),0)}catch(e){}S=keep}
+    const sil=['bizu','benoit','jeje'].map((id,i)=>ART[id]&&ART[id].full?`<div class="hmsil" style="animation-delay:${-i*.7}s"><img src="${ART[id].full}" alt=""><span>?</span></div>`:'').join('');
+    const conf=Array.from({length:36},()=>`<i class="hmcf" style="left:${(Math.random()*100).toFixed(1)}%;animation-delay:${(-Math.random()*9).toFixed(2)}s;animation-duration:${(6+Math.random()*5).toFixed(2)}s;background:${pick(['#ffd23f','#ff4fd8','#7fe8ff','#5fdc7a'])}"></i>`).join('');
+    body=`<div class="hm">
+      ${[['#ff4fd8',8,-30,0],['#ffd23f',28,-12,-1.5],['#7fe8ff',62,12,-3],['#ffd23f',84,28,-4.5]].map(([c,l,r,d])=>`<i class="hmbeam" style="left:${l}%;--r:${r}deg;animation-delay:${d}s;background:linear-gradient(to top,${c}aa,transparent 80%)"></i>`).join('')}${conf}
+      <button class="hmfs" id="bFs" aria-label="Plein écran">⛶</button>
+      <div class="hmtop"><img src="${LOGO}" alt="Logo Team Padre"><div class="hmtitle">PALÉO PARTY</div><div class="hmsub">LE JEU DES ASPIRATORS</div></div>
+      <button class="hmplay" id="tPlateau"><span>JOUER</span>${saved?`<small>Partie en cours · tour ${saved.round}/${saved.maxRound}</small>`:''}</button>
+      <div class="hmsils">${sil}</div>
+      <div class="hmrow"><button class="hmcard" id="bFree"><b>🎮</b><span>Mini-jeux</span></button><button class="hmcard" id="bRules"><b>📖</b><span>Règles</span></button><button class="hmcard" id="tExtras"><b>🃏</b><span>Extras</span></button><button class="hmcard" id="tSet"><b>⚙️</b><span>Réglages</span></button></div>
+    </div>`;
   }else if(TVIEW==='plateau'){
-    body=head('Jeu de plateau')+`<div class="mpanel">
-      <div class="trow"><span class="tag">Durée</span><div class="seg" id="seg">${[[8,'8 tours · 30 min'],[12,'12 tours · 45 min'],[16,'16 tours · 1 h']].map(([v,l])=>`<button data-v="${v}" class="${v===ROUNDS?'on':''}">${l}</button>`).join('')}</div></div>
-      <div class="trow"><button class="mtile red mid" id="bNew" data-d="Une nouvelle nuit au Paléo commence."><span class="mdeco">🎪</span><b>Nouvelle partie</b></button>
-      ${saved?`<button class="mtile green mid" id="bResume" data-d="Reprendre là où vous vous étiez arrêtés."><span class="mdeco">▶</span><b>Reprendre</b><small>Tour ${saved.round}/${saved.maxRound}</small></button>`:''}</div>
-    </div>`+foot('Choisissez la durée, puis lancez la partie.',1);
+    body=head('Jeu de plateau')+`<div class="sbpanel"><h3 class="sbh">⏱️ Durée de la partie</h3>
+      <div class="tgrid3" id="seg">${[[8,'8 TOURS','30 min','⚡'],[12,'12 TOURS','45 min','🎪'],[16,'16 TOURS','1 heure','🌙']].map(([v,l,d,i],k)=>`<button data-v="${v}" class="ttile t${k}${v===ROUNDS?' on':''}"><span class="ti">${i}</span><b>${l}</b><small>${d}</small></button>`).join('')}</div>
+      <div class="tgrid2"><button class="ttile big tred" id="bNew"><span class="timg"><img src="${DECO_ART.grande[0]}" alt=""></span><b>NOUVELLE PARTIE</b></button>
+      ${saved?`<button class="ttile big tgreen" id="bResume"><span class="timg"><img src="${WH_HUB}" alt=""></span><b>REPRENDRE</b><small>Tour ${saved.round}/${saved.maxRound}</small></button>`:''}</div></div>`;
   }else if(TVIEW==='extras'){
     body=head('Extras')+`<div class="mpanel">
       <h3>🃏 Memory du crew <small>(${MEM_DEF.length+MEM.length} photos)</small></h3>
@@ -2342,7 +2404,8 @@ function titleScreen(view){
     body=head('Réglages')+`<div class="setup">${fake.map((p,i)=>`<div class="scard" style="--pc:${p.color}">${avatarHTML(p,72)}<h3>${esc(p.nick)}</h3>
       <div class="trow"><label class="filebtn">📷 Changer l'avatar<input type="file" accept="image/*" id="av${i}" hidden></label>${AV[i]?`<button class="filebtn" id="rm${i}">Retirer</button>`:''}</div></div>`).join('')}</div>`+foot('Attention, cette page dévoile les personnages !',1);
   }
-  t.innerHTML=`<div class="tin menu">${body}</div>`;
+  t.className=TVIEW==='main'?'home':'sub';
+  t.innerHTML=TVIEW==='main'?body:`<div class="tin menu sbwrap">${body}</div>`;
   const on=(id,f)=>{const e=$('#'+id);if(e)e.onclick=f};
   const chg=(id,f)=>{const e=$('#'+id);if(e)e.onchange=f};
   t.querySelectorAll('.mtile').forEach(b=>{const show=()=>{const d=$('#mdesc');if(d&&b.dataset.d)d.textContent=b.dataset.d};b.onpointerenter=show;b.onfocus=show});
@@ -2368,7 +2431,7 @@ function titleScreen(view){
 }
 let FREE={};
 function freeMode(reset){
-  trapBack();
+  trapBack();$('#title').className='sub';
   if(reset||!S||!S.free){newGame(ROUNDS);S.free=true;S.phase='free';FREE={};S.players.forEach(p=>FREE[p.id]=0)}
   const t=$('#title');t.hidden=false;
   const ks=Object.keys(MG).filter(k=>(!MG[k].need||MG[k].need())&&!MG[k].irl&&!MG[k].sec);
