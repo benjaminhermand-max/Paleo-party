@@ -1188,7 +1188,7 @@ function nodeInfo(id){
   if(n.t.startsWith('scene:')){
     const k=n.t.slice(6),s=SC[k];
     const own=S?S.players.filter(p=>p.bracelets.includes(k)).map(p=>esc(p.nick)):[];
-    return ask({icon:`<img src="${BR_ART[k][0]}" alt="" style="width:min(240px,55vw)">`,title:s.name,color:s.color,body:`<p>Le bracelet s'achète en passant devant : <b>${s.c} ${DUCK}</b> et <b>${s.g} gorgée${s.g>1?'s':''}</b>. S'arrêter pile dessus fait 3 canards de réduction.</p><p>En fin de partie, chaque bracelet vaut ${BR_VAL} ${DUCK}, et les 6 bracelets rapportent ${BR_BONUS} ${DUCK} de bonus.</p><p><small>${own.length?'Bracelet déjà gagné par : '+own.join(', '):'Personne n\'a encore ce bracelet.'}</small></p>`,choices:[{label:'OK',value:1,cls:'primary'}]});
+    return ask({plain:true,icon:`<img src="${BR_ART[k][0]}" alt="" style="width:min(240px,55vw)">`,title:s.name,color:s.color,body:`<p>Le bracelet s'achète en passant devant : <b>${s.c} ${DUCK}</b> et <b>${s.g} gorgée${s.g>1?'s':''}</b>. S'arrêter pile dessus fait 3 canards de réduction.</p><p>En fin de partie, chaque bracelet vaut ${BR_VAL} ${DUCK}, et les 6 bracelets rapportent ${BR_BONUS} ${DUCK} de bonus.</p><p><small>${own.length?'Bracelet déjà gagné par : '+own.join(', '):'Personne n\'a encore ce bracelet.'}</small></p>`,choices:[{label:'OK',value:1,cls:'primary'}]});
   }
   if(n.t.startsWith('shop:')){
     const s=SHOPS[n.t.slice(5)];
