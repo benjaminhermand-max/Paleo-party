@@ -1770,7 +1770,7 @@ async function radioNext(){
     const tk=await dzTrack(RADIO.deck.pop());if(!tk)continue;
     RADIO.played.add(tk.t);RADIO.cur=tk;
     if(!RADIO.au){RADIO.au=new Audio();RADIO.au.volume=.3;RADIO.au.onended=()=>{RADIO.cur=null;radioTick(true)}}
-    RADIO.au.src=tk.url;if(radioOK())RADIO.au.play().then(()=>toast(`📻 Radio Paléo : ${esc(tk.a)} · ${esc(tk.t)}`,'#ff4fd8')).catch(()=>{});break}}catch(e){}
+    RADIO.au.src=tk.url;if(radioOK())RADIO.au.play().then(()=>toast(`📻 Radio Paléo : ${esc(tk.a)} · ${esc(tk.t)}${PALEO_YEAR[tk.a]?` · 🎪 Paléo ${PALEO_YEAR[tk.a]}`:''}`,'#ff4fd8')).catch(()=>{});break}}catch(e){}
   RADIO.busy=false;
 }
 function radioTick(next){
