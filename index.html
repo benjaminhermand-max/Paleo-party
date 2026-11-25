@@ -716,7 +716,7 @@ const MG={
   shifumi:{n:'Shi-fu-mi',i:'✊',d:'Comme au Paléo : jouez avec vos mains au « Shi-Fu-Mi ! », puis chacun touche le signe qu\'il a fait. Le premier à 3 points gagne.'},
   theme:{n:'Thème en chaîne',i:'🔗',d:'La tablette donne un thème. Chacun son tour, citez un élément en 10 secondes. Celui qui sèche ou répète est éliminé. 3 manches.'},
   plusmoins:{n:'Plus ou moins',i:'🔢',d:'Une question chiffrée sur le Paléo. Chacun son tour, tapez un nombre : la tablette répond « plus » ou « moins ».'},
-  dessin:{n:'Dessine c\'est gagné',i:'✏️',d:'Chacun son tour, dessinez au stylet le mot secret. Les autres devinent à voix haute.'},
+  dessin:{n:'Dessine c\'est gagné',i:'✏️',d:'Chacun son tour, 3 fois chacun, dessinez au stylet le mot secret. Les autres devinent à voix haute.'},
   interdit:{n:'Le mot interdit',i:'🤐',d:'Faites deviner un maximum de mots en 45 secondes sans dire les mots interdits.'},
   taupe:{n:'Taupe Aspirator',i:'🕳️',d:'Chacun sa zone : tapez les déchets qui sortent des trous, évitez les bouteilles (génépi, Ricard, Jack).'},
   corde:{n:'Tir à la corde',i:'🪢',d:'Face à face : tapotez votre zone pour tirer la corde de votre côté.',duelOnly:true},
@@ -2213,10 +2213,11 @@ let drawDeck=[];function nextDraw(){if(!drawDeck.length)drawDeck=shuffle(DRAW);r
 async function mgDessin(players,{duel}={}){
   const stage=mgOpen('Dessine c\'est gagné','✏️',true);
   const sc=zero(players),base=[...players].sort((a,b)=>a.seat-b.seat),SECS=60;
-  await ready(stage,'Chacun dessine à son tour',`Le dessinateur voit le mot en secret et dessine au stylet en ${SECS} secondes. Les autres devinent à voix haute. Interdit d'écrire des lettres !`);
-  for(const p of base){
+  const ROUNDS_D=3,order=[];for(let r=0;r<ROUNDS_D;r++)order.push(...base);
+  await ready(stage,`Chacun dessine ${ROUNDS_D} fois`,`Le dessinateur voit le mot en secret et dessine au stylet en ${SECS} secondes. Les autres devinent à voix haute. Interdit d'écrire des lettres !`);
+  for(let di=0;di<order.length;di++){const p=order[di];
     const word=nextDraw();
-    stage.innerHTML=`<div class="turnchip" style="--pc:${p.color}">${avatarHTML(p,36)} À ${esc(p.nick)} de dessiner</div><div class="q">Les autres, ne regardez pas l'écran !</div><button class="btn primary" id="see">Voir le mot</button>`;
+    stage.innerHTML=`<div class="qnum">Dessin ${di+1} / ${order.length} · tour ${Math.floor(di/base.length)+1} / ${ROUNDS_D}</div><div class="turnchip" style="--pc:${p.color}">${avatarHTML(p,36)} À ${esc(p.nick)} de dessiner</div><div class="q">Les autres, ne regardez pas l'écran !</div><button class="btn primary" id="see">Voir le mot</button>`;
     await new Promise(r=>$('#see').onclick=r);
     stage.innerHTML=`<div class="qnum">Ton mot</div><div class="sfbig" style="font-size:clamp(40px,7vw,80px)">${esc(word)}</div><button class="btn primary" id="go">C'est retenu, on dessine !</button>`;
     await new Promise(r=>$('#go').onclick=r);
