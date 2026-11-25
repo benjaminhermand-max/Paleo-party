@@ -1779,6 +1779,66 @@ function radioTick(next){
   if(next||!RADIO.au||!RADIO.cur){radioNext();return}
   if(RADIO.au.paused)RADIO.au.play().catch(()=>{});
 }
+/* ---------- Spotify (compte Premium) : le jeu pilote l'appli Spotify de la tablette ---------- */
+const SP_CLIENT='70753e462cec467396f9c383ed260b16',SP_REDIRECT='https://benjaminhermand-max.github.io/Paleo-party/',SP_SCOPE='user-modify-playback-state user-read-playback-state';
+const SP={playing:false,paused:false,endAt:0,left:0,busy:false,failUntil:0,dev:null,warned:0};
+const spOn=()=>!!(load('paleo-spotify')||{}).refresh;
+const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+async function spLogin(){
+  if(location.origin+location.pathname!==SP_REDIRECT){await info('🎧','Spotify','La connexion à Spotify ne marche que depuis le jeu installé, à l\'adresse benjaminhermand-max.github.io/Paleo-party/.','#1db954');return}
+  const v=b64u(crypto.getRandomValues(new Uint8Array(48)));store('paleo-sp-verifier',v);
+  const ch=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)));
+  location.href='https://accounts.spotify.com/authorize?'+new URLSearchParams({client_id:SP_CLIENT,response_type:'code',redirect_uri:SP_REDIRECT,code_challenge_method:'S256',code_challenge:ch,scope:SP_SCOPE});
+}
+async function spTokenReq(params){
+  const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:SP_CLIENT,...params})});
+  if(!r.ok)throw new Error('token '+r.status);const j=await r.json();const old=load('paleo-spotify')||{};
+  store('paleo-spotify',{access:j.access_token,refresh:j.refresh_token||old.refresh,exp:Date.now()+j.expires_in*1000});return j.access_token;
+}
+async function spToken(){const t=load('paleo-spotify');if(!t||!t.refresh)return null;if(t.access&&Date.now()<t.exp-60000)return t.access;
+  try{return await spTokenReq({grant_type:'refresh_token',refresh_token:t.refresh})}catch(e){return null}}
+async function spApi(method,path,body){const tk=await spToken();if(!tk)return {status:401};
+  try{const r=await fetch('https://api.spotify.com/v1'+path,{method,headers:{Authorization:'Bearer '+tk,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
+    let j=null;try{j=r.status===204?null:await r.json()}catch(e){}return {status:r.status,json:j}}catch(e){return {status:0}}}
+(async()=>{const q=new URLSearchParams(location.search);
+  if(q.get('code')){const v=load('paleo-sp-verifier');history.replaceState(null,'',location.pathname);
+    try{await spTokenReq({grant_type:'authorization_code',code:q.get('code'),redirect_uri:SP_REDIRECT,code_verifier:v});unstore('paleo-sp-verifier');setTimeout(()=>toast('🎧 Spotify est connecté ! La Radio Paléo passera par Spotify.','#1db954'),800)}
+    catch(e){setTimeout(()=>toast('😕 La connexion à Spotify a échoué','#e23b4e'),800)}}
+  else if(q.get('error'))history.replaceState(null,'',location.pathname);})();
+async function spDevice(){const r=await spApi('GET','/me/player/devices');const d=(r.json&&r.json.devices)||[];
+  return (d.find(x=>x.is_active)||d.find(x=>/smartphone|tablet/i.test(x.type))||d[0]||{}).id||null}
+async function spNext(){
+  if(SP.busy||Date.now()<SP.failUntil)return;SP.busy=true;
+  try{
+    let tr=null,meta=null;
+    for(let i=0;i<5&&!tr;i++){if(!RADIO.deck.length)RADIO.deck=shuffle(BLIND_HIT.filter(x=>!RADIO.played.has(x[1])));if(!RADIO.deck.length){RADIO.played.clear();continue}
+      meta=RADIO.deck.pop();const r=await spApi('GET','/search?'+new URLSearchParams({q:`artist:${meta[0]} track:${meta[1]}`,type:'track',limit:'1',market:'FR'}));
+      tr=r.json&&r.json.tracks&&r.json.tracks.items[0];if(r.status===401){SP.failUntil=Date.now()+60000;return}}
+    if(!tr)return;
+    const dev=await spDevice();
+    if(!dev){SP.failUntil=Date.now()+20000;if(Date.now()-SP.warned>60000){SP.warned=Date.now();toast('🎧 Ouvre l\'appli Spotify sur la tablette pour lancer la Radio Paléo','#1db954')}return}
+    const pos=Math.max(0,Math.min(Math.round(tr.duration_ms*.33),tr.duration_ms-65000));
+    const r=await spApi('PUT','/me/player/play?device_id='+dev,{uris:[tr.uri],position_ms:pos});
+    if(r.status>=200&&r.status<300){SP.dev=dev;SP.playing=true;SP.paused=false;SP.endAt=Date.now()+60000;RADIO.played.add(meta[1]);RADIO.cur={a:meta[0],t:meta[1]};
+      if(hymn&&!hymn.paused)hymn.pause();if(RADIO.au&&!RADIO.au.paused)RADIO.au.pause();
+      toast(`🎧 Radio Paléo : ${esc(meta[0])} · ${esc(meta[1])}${PALEO_YEAR[meta[0]]?` · 🎪 Paléo ${PALEO_YEAR[meta[0]]}`:''}`,'#1db954')}
+    else SP.failUntil=Date.now()+15000;
+  }finally{SP.busy=false}
+}
+async function spPause(){if(!SP.playing||SP.busy)return;SP.busy=true;SP.playing=false;SP.paused=true;SP.left=SP.endAt-Date.now();
+  try{await spApi('PUT','/me/player/pause'+(SP.dev?'?device_id='+SP.dev:''))}finally{SP.busy=false}}
+async function spResume(){if(SP.busy)return;if(SP.left<4000){SP.paused=false;return spNext()}
+  SP.busy=true;try{const r=await spApi('PUT','/me/player/play'+(SP.dev?'?device_id='+SP.dev:''));
+    if(r.status>=200&&r.status<300){SP.playing=true;SP.paused=false;SP.endAt=Date.now()+SP.left}else{SP.paused=false;SP.busy=false;return spNext()}}finally{SP.busy=false}}
+const _radioTick=radioTick;
+radioTick=function(next){
+  if(!spOn())return _radioTick(next);
+  if(RADIO.au&&!RADIO.au.paused)RADIO.au.pause();
+  if(!radioOK()){if(SP.playing)spPause();return}
+  if(hymn&&!hymn.paused)hymn.pause();
+  if(SP.paused)return spResume();
+  if(!SP.playing||Date.now()>SP.endAt)spNext();
+};
 setInterval(()=>radioTick(false),700);
 const PALEO_YEAR={'The Cure':2026,'Gorillaz':2026,'Lorde':2026,'Katy Perry':2026,'The Young Gods':2026,'Buraka Som Sistema':2026,'Ásgeir':2026,'Justice':2025,'Simple Minds':2025,'Skunk Anansie':2025,'Texas':2025,'Sex Pistols':2025,'Queens of the Stone Age':2025,'David Guetta':2025,'Will Smith':2025,'Sean Paul':2024,'Patti Smith':2024,'CHIC':2024,'Paul Kalkbrenner':2024,'Véronique Sanson':2024,'Sam Smith':2024,'Aurora':2024,'Zaho de Sagazan':2024,'The Blaze':2024,'Mika':2024,'Calogero':2024,'Eddy de Pretto':2024,'Hoshi':2024,'Christophe Maé':2024,'Olivia Ruiz':2024,'Royal Blood':2024,'Khruangbin':2024,'Major Lazer':2024,'Burna Boy':2024,'Gims':2024,'IAM':2024,'Luidji':2024,'Goran Bregović':2024,'Stromae':2022,'Kiss':2022,'Sting':2022,'Rag\'n\'Bone Man':2022,'DJ Snake':2022,'Angèle':2022,'Roméo Elvis':2022,'Juliette Armanet':2022,'Grand Corps Malade':2022,'Tryo':2022,'Gaël Faye':2022,'Feu! Chatterton':2022,'Francis Cabrel':2022,'Maxime Le Forestier':2022,'Orelsan':2022};
 
@@ -2419,6 +2479,9 @@ function titleScreen(view){
       <label class="filebtn">📸 Prendre une photo<input type="file" accept="image/*" capture="environment" id="memCam" hidden></label>
       ${MEM.length?'<button class="filebtn" id="memClr">Retirer mes ajouts</button>':''}</div>
       <p class="tag" style="font-size:14px">Le Memory tire 15 photos au hasard à chaque partie.</p>
+      <h3>🎧 Spotify</h3>
+      <p class="tag" style="font-size:14px">${spOn()?'✅ Connecté : la Radio Paléo joue une minute de chaque morceau dans l\'appli Spotify de la tablette. Garde Spotify ouvert en arrière-plan.':'Avec ton compte Premium, la Radio Paléo joue une minute de chaque morceau via l\'appli Spotify. Sinon, elle utilise les extraits Deezer de 30 secondes.'}</p>
+      <div class="trow">${spOn()?'<button class="filebtn" id="spOff">Déconnecter Spotify</button>':'<button class="filebtn" id="spIn" style="background:#1db954;color:#06210f">🎧 Connecter Spotify</button>'}</div>
       <h3>🎵 Hymne Aspirator</h3>
       <p class="tag" style="font-size:14px">L'hymne « Paléo 2K26 » joue sur les menus. Tu peux le remplacer pour cette tablette.</p>
       <div class="trow"><label class="filebtn">Charger un autre hymne<input type="file" accept="audio/*" id="hymnIn" hidden></label>
@@ -2447,6 +2510,7 @@ function titleScreen(view){
   });
   chg('memCam',async e=>{const f=e.target.files[0];if(!f||MEM.length>=40)return;const src=await loadThumb(f);if(src){MEM.push({n:'Photo '+(MEM.length+1),src});store('paleo-mem',MEM);SFX.fanfare()}titleScreen()});
   chg('memIn',async e=>{for(const f of [...e.target.files]){if(MEM.length>=40)break;const src=await loadThumb(f);if(src)MEM.push({n:f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim(),src})}store('paleo-mem',MEM);titleScreen()});
+  on('spIn',spLogin);on('spOff',()=>{unstore('paleo-spotify');titleScreen()});
   on('memClr',()=>{MEM=[];store('paleo-mem',MEM);titleScreen()});
   const sg=$('#seg');if(sg)sg.querySelectorAll('button').forEach(b=>b.onclick=()=>{ROUNDS=+b.dataset.v;store('paleo-rounds',ROUNDS);titleScreen()});
   chg('hymnIn',e=>{const f=e.target.files[0];if(!f)return;if(hymn)hymn.pause();hymn=new Audio(URL.createObjectURL(f));hymn.loop=true;hymn.volume=.6;hymn.play().catch(()=>{});titleScreen()});
